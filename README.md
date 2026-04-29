@@ -2,8 +2,9 @@
 
 # Intro:
 
-[Saul Goodman voice] Can't get reliable sleep? Feeling like it's out of your control? Well fret not! Just run this script and start counting your sheep! 
-	WICK - Windows Idle Control Keeper
+**[Saul Goodman voice] Can't get reliable sleep? Feeling like it's out of your control? Well fret not! Just run this script and start counting your sheep!**
+
+**WICK - Windows Idle Control Keeper**
 
 This script detects Idle activity with your specific thresholds and conditions, and triggers and/or prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
 
