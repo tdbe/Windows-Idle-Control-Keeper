@@ -64,17 +64,23 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 
 ## Notes: 
 
-### Note: I've always nuked Modern Standby from every PC I touched, because we have literally 0.0f low-power hardware and protocol standards, and I don't want constant 100W power draw, and for laptops my battery to run out in 2 hours while "sleeping" with the lid closed (Microsoft is the most infuriating thing in the history of ever). You can have a look at how I printed and fetched the sleep AC/DC settings, and figure out the parsing of S3 yourself if you want. PRs welcome.
+### Note: 
 
-### Note: I don't vibecode anything I consider even remotely reliable, and either way this script is read-through and tested. But for this project I did try out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, an dthe .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
+I've always nuked Modern Standby from every PC I touched, because we have literally 0.0f low-power hardware and protocol standards, and I don't want constant 100W power draw, and for laptops my battery to run out in 2 hours while "sleeping" with the lid closed (Microsoft is the most infuriating thing in the history of ever). You can have a look at how I printed and fetched the sleep AC/DC settings, and figure out the parsing of S3 yourself if you want. PRs welcome.
+
+### Note: 
+
+I don't vibecode anything I consider even remotely reliable, and either way this script is read-through and tested. But for this project I did try out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, an dthe .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 ## Parameters:
 
 Parameters you can set when calling the script or adding it to Task Scheduler (the ones you skip will have defaults).
 To see all parameters and their description, run this command: `get-help ./windows_idle_control_keeper.ps1 -detailed`
 
+```
 e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -etc. -etc.
 
 or
 
 e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $false -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -IdleDurationMinutes 720 -etc. -etc.
+```
