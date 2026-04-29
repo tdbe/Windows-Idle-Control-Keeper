@@ -39,27 +39,29 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 [2026-04-30 00:11:58] [INFO] "~*------- W.I.C.K. started. -------"
 [2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
 [2026-04-30 00:11:58] [INFO] Power plan idle timeout: 60 min: sleep=3600 sec, hibernate=3600 sec
-[2026-04-30 00:11:58] [INFO]   Using windows power plan's minimum(sleep, hibernate) value as the idle timeout (checks the current active power plan value every: 60 sec)
-[2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we were sleeping or somehow lagging a lot, Resetting idle counter.
-[2026-04-30 00:13:38] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:15:49] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:18:03] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:20:18] [INFO] [IDLE BREAKER][idleSeconds: 9] Sustained audio playing for 5 sec, Resetting idle counter.
-[2026-04-30 00:22:27] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:24:35] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:26:53] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:29:07] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:31:16] [INFO] [IDLE BREAKER][idleSeconds: 5] Sustained audio playing for 5 sec, Resetting idle counter.
-[2026-04-30 00:33:22] [INFO] [IDLE BREAKER][idleSeconds: 5] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:35:41] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:38:00] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:42:30] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:44:38] [INFO] [IDLE BREAKER][idleSeconds: 0] Mouse moved 160.6 px > 10, Resetting idle counter.
-[2026-04-30 00:46:52] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:49:18] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:51:39] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:53:57] [INFO] [IDLE BREAKER][idleSeconds: 5] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:53:59] [INFO] [idleSeconds: 0] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | MouseDelta: 0 px | Idle: 0 min / 60 min
+[2026-04-30 00:11:58] [INFO]   Using windows power plan's minimum(sleep, hibernate) value as the idle timeout
+(checks the current active power plan value every: 60 sec)
+[2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
+were sleeping or somehow lagging a lot, Resetting idle counter.
+[2026-04-30 00:13:38] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:15:49] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:18:03] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:20:18] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec, Resetting idle counter.
+[2026-04-30 00:22:27] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:24:35] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:26:53] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:29:07] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:31:16] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec, Resetting idle counter.
+[2026-04-30 00:33:22] [INFO] [IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:35:41] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:38:00] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:42:30] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:44:38] [INFO] [IDLE BREAKER] Mouse moved 160.6 px > 10, Resetting idle counter.
+[2026-04-30 00:46:52] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:49:18] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:51:39] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:53:57] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
+[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | MouseDelta: 0 px | Idle: 0 min / 60 min
 ```
 
 ## Notes: 
