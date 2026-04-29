@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-	MIT License, Copyright (c) 2026 Tudor Berechet (tdbe)[https://github.com/tdbe] 
+	MIT License, Copyright (c) 2026 Tudor Berechet [tdbe](https://github.com/tdbe) 
 
 	# Intro:
 	
