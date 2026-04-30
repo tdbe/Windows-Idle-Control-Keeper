@@ -6,7 +6,7 @@
 
 **WICK - Windows Idle Control Keeper**
 
-This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; using instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
 
 I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
