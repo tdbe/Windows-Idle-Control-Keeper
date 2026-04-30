@@ -78,7 +78,11 @@ I don't vibecode anything I consider even remotely reliable, and this script is 
 
 Parameters you can set when calling the script or adding it to Task Scheduler (the ones you skip will have defaults).
 
-To see all parameters and their description, run this command: `get-help "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -detailed`
+To see all parameters and their description, run this command: 
+
+```
+get-help "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -detailed
+```
 
 ### Run in a powershell terminal window, examples:
 
