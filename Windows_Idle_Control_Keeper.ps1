@@ -136,7 +136,7 @@
   Ignored if FollowTheSameSleepTimeSettingAsYourPowerPlan == $true (default: 720) (12 hours)
 
 .PARAMETER CpuThresholdPercent
-  CPU usage above this resets idle timer (default: 6)
+  CPU usage above this resets idle timer (default: 8)
 
 .PARAMETER DiskThresholdKBps
   Disk I/O (KB/s) above this resets idle timer (default: 1250)
@@ -172,7 +172,7 @@
 .PARAMETER PauseFlagPath
   Path to a flag file. If this file exists, the script pauses monitoring and skips sleep.  
   Allows manual pause/resume by creating/deleting the file.
-  (default: "C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+  (default: "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
 
 .PARAMETER LogPath
   Full path to the log file (default: "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
@@ -204,7 +204,7 @@ param(
     [bool]$FollowTheSameSleepTimeSettingAsYourPowerPlan = $true, # polled every minute so it knows if you switched to battery or if the power plan changed.
     [int]$FallbackIdleMinutes = 30,
     [int]$IdleDurationMinutes = 60*12, # Using this you can set more than the weird 5h max limit that windows power plan lets you set. Ignored if FollowTheSameSleepTimeSettingAsYourPowerPlan == $true
-    [double]$CpuThresholdPercent = 6,
+    [double]$CpuThresholdPercent = 8,
     [long]$DiskThresholdKBps = 1250,
     [long]$NetworkThresholdKBps = 850,
     [int]$MouseThresholdPixels = 10, # If mouse moved more than this number of pixels.
@@ -736,7 +736,7 @@ try {
 		$mouseMoved = $mouseDelta -gt $MouseThresholdPixels
 
 		# Log every $logToFileIntervalSeconds seconds 
-		if ($idleSeconds -ge $logToFileIntervalSeconds) {
+		if ($idleSeconds -ge $logToFileIntervalSeconds -and $nextsettingsPoll -le $ActivityDetectionPeriod) {
 			$mouseLog = " "
 			if (Test-IsInteractiveSession) {
 				$mouseLog = "MouseDelta: $([math]::Round($mouseDelta,1)) px"
