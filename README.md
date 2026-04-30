@@ -6,7 +6,7 @@
 
 **WICK - Windows Idle Control Keeper**
 
-This script detects Idle activity with your specific thresholds and conditions, and triggers and/or prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
 
 I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
@@ -36,7 +36,7 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 ## Log Example:
 
 ```
-[2026-04-30 00:11:58] [INFO] "~*------- W.I.C.K. started. -------"
+[2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
 [2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
 [2026-04-30 00:11:58] [INFO] Power plan idle timeout: 60 min: sleep=3600 sec, hibernate=3600 sec
 [2026-04-30 00:11:58] [INFO]   Using windows power plan's minimum(sleep, hibernate) value as the idle timeout
