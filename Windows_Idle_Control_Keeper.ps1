@@ -2,16 +2,21 @@
 .SYNOPSIS
 	MIT License, Copyright (c) 2026 Tudor Berechet [tdbe](https://github.com/tdbe) 
 
+	# Windows-Idle-Control-Keeper
+
+	# Windows-Idle-Control-Keeper
+
 	# Intro:
-	
-	[Saul Goodman voice] Can't get reliable sleep? Feeling like it's out of your control? Well fret not! Just run this script and start counting your sheep! 
-		WICK - Windows Idle Control Keeper
-	
-	This script detects Idle activity with your specific thresholds and conditions, and triggers and/or prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
-	
-	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like (DontSleep!.exe)[https://www.softwareok.com/?Download=DontSleep] (from 2014)[https://www.chip.de/downloads/Don-t-Sleep_42626965.html]
-	
-	# Features, Dependencies, Log Example, Notes, Parameters:
+
+	[Saul Goodman voice] **Can't get reliable sleep? Feeling like it's out of your control? Well fret not, just run this script and you can start counting those sheep!**
+
+	**WICK - Windows Idle Control Keeper**
+
+	This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+
+	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
+
+	# Features, Dependencies, Log Example, Notes, Run & Parameters:
 
 	## Features:
 
@@ -28,13 +33,14 @@
 	- It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
 
 	## Dependencies:
-		- python (and the `checkIfAudioIsPlaying.py` script, which requires `pip install pycaw`)
-		- virtually any .net (C# capability) installed on the system (for `SetThreadExecutionState`)
-		- powershell 5.1 (the latest is powershell 7+)
-		- You need to check that the paths are correct / to your liking. Set the corresponding "*Path" parameters.
+
+	- python (and the `checkIfAudioIsPlaying.py` script, which requires `pip install pycaw`)
+	- virtually any .net (C# capability) installed on the system (for `SetThreadExecutionState`)
+	- powershell 5.1 (the latest is powershell 7+)
+	- You need to check that the paths are correct / to your liking. Set the corresponding "*Path" parameters.
 
 	## Log Example:
-	
+
 	```
 	[2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
 	[2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
@@ -65,21 +71,55 @@
 	```
 
 	## Notes: 
-	
-	### Note: I've always nuked Modern Standby from every PC I touched, because we have literally 0.0f low-power hardware and protocol standards, and I don't want constant 100W power draw, and for laptops my battery to run out in 2 hours while "sleeping" with the lid closed (Microsoft is the most infuriating thing in the history of ever). You can have a look at how I printed and fetched the sleep AC/DC settings, and figure out the parsing of anything else if you want. PRs welcome.
-	
-	### Note: I don't vibecode anything I consider even remotely reliable, and either way this script is read-through and tested. But for this project I did try out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
-	
-	## Parameters:
+
+	### Note: 
+
+	I've always nuked Modern Standby from every PC I touched, because we have literally 0.0f low-power hardware and protocol standards, and I don't want constant 100W power draw, and for laptops my battery to run out in 2 hours while "sleeping" with the lid closed (Microsoft is the most infuriating thing in the history of ever). You can have a look at how I printed and fetched the sleep AC/DC settings, and figure out the parsing of anything else if you want. PRs welcome.
+
+	### Note: 
+
+	I don't vibecode anything I consider even remotely reliable, and this script is read-through and tested. But here I tried out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
+
+	## Run & Parameters:
 
 	Parameters you can set when calling the script or adding it to Task Scheduler (the ones you skip will have defaults).
-	To see all parameters and their description, run this command: `get-help ./windows_idle_control_keeper.ps1 -detailed`
-	
-	e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -etc. -etc.
-	
+
+	To see all parameters and their description, run this command: 
+
+	```
+	get-help "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -detailed
+	```
+
+	### Run in a powershell terminal window, examples:
+
+	```
+	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true # other flags -etc. -etc.
+
 	or
-	
-	e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $false -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -IdleDurationMinutes 720 -etc. -etc.
+
+	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$false -OnlyThisScriptCanCauseWindowsToSleep:$true -IdleDurationMinutes:720 -LogToConsoleVerbose:$false # other flags -etc. -etc.
+
+	```
+
+	### Run in Task Scheduler:
+
+	#### Program/script: 
+
+	```
+	powershell.exe
+	```
+
+	#### Add arguments (window opens as minimized):
+
+	```
+	-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+	```
+
+	#### Add arguments (no window, runs in background completely hidden):
+
+	```
+	-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+	```
 
 .PARAMETER OnlyThisScriptCanCauseWindowsToSleep
   Uses `SetThreadExecutionState` to prevent other processes from overriding the sleep state.  
@@ -155,7 +195,7 @@
 .PARAMETER SampleIntervalSec
   How often to sample system metrics (default: 1)
   
-.PARAMETER powerPlanPollIntervalSeconds
+.PARAMETER settingsPollIntervalSeconds
   Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. (default: 60)
 #>
 
@@ -182,7 +222,7 @@ param(
 	[bool]$LogToConsoleVerbose = $true, # Whether to log to the console (not log file) as often as there is an event in the constant loop
     [int]$SleepAbortWindowCountdownSeconds = 60,
     [int]$SampleIntervalSec = 1,
-	[int]$powerPlanPollIntervalSeconds = 60
+	[int]$settingsPollIntervalSeconds = 60
 )
 
 $myUnixTimeEpochStart = Get-Date '2026-01-01'
@@ -592,10 +632,10 @@ function Show-AbortDialog {
 # --- Main Loop ---
 Write-Log "~*------- W.I.C.K. started. -------"
 Write-Log "  Log path: $LogPath"
-#Write-Log "  Dynamic idle timeout (checking the current active power plan value every: $powerPlanPollIntervalSeconds)"
+#Write-Log "  Dynamic idle timeout (checking the current active power plan value every: $settingsPollIntervalSeconds)"
 if ($FollowTheSameSleepTimeSettingAsYourPowerPlan) {
     $IdleDurationMinutes = Get-PowerPlanIdleTimeoutMinutes
-    Write-Log "  Using windows power plan's minimum(sleep, hibernate) value as the idle timeout: $IdleDurationMinutes min. (Checks the current active power plan value every: $powerPlanPollIntervalSeconds sec.)"
+    Write-Log "  Using windows power plan's minimum(sleep, hibernate) value as the idle timeout: $IdleDurationMinutes min. (Checks the current active power plan value every: $settingsPollIntervalSeconds sec.)"
 } else {
     Write-Log "  Using manual idle timeout value: system considered idle at: $IdleDurationMinutes min."
 }
@@ -620,7 +660,7 @@ $diskHistory = New-Object 'System.Collections.Queue' $maxSamples
 $netHistory = New-Object 'System.Collections.Queue' $maxSamples
 $audioHistory = New-Object 'System.Collections.Queue' $maxSamplesAudio
 
-$nextPowerPlanPoll = $powerPlanPollIntervalSeconds
+$nextsettingsPoll = $settingsPollIntervalSeconds
 
 if (Test-Path $PauseFlagPath) {
 	Write-Log "Script pause flag file is present - while loop running but skipping until flag removed or renamed." "INFO"
@@ -792,9 +832,9 @@ try {
 			$idleSeconds += $SampleIntervalSec
 		}
 
-		# Poll power plan timeout every $powerPlanPollIntervalSeconds seconds
-		$nextPowerPlanPoll--
-		if ($nextPowerPlanPoll -le 0) {
+		# Poll power plan timeout every $settingsPollIntervalSeconds seconds
+		$nextsettingsPoll--
+		if ($nextsettingsPoll -le 0) {
 			if ($FollowTheSameSleepTimeSettingAsYourPowerPlan) {
 				$newTimeout = Get-PowerPlanIdleTimeoutMinutes
 				if ($newTimeout -ne $IdleDurationMinutes) {
@@ -802,7 +842,12 @@ try {
 					$IdleDurationMinutes = $newTimeout
 				}
 			}
-			$nextPowerPlanPoll = $powerPlanPollIntervalSeconds
+			
+			if($OnlyThisScriptCanCauseWindowsToSleep -eq $true){
+					[WindowsSleepWrangler]::IgnoreIdleTimers()
+			}
+			
+			$nextsettingsPoll = $settingsPollIntervalSeconds
 		}
 
 		# Check if ready to sleep
@@ -823,7 +868,7 @@ try {
 					[WindowsSleepWrangler]::StopIgnoringIdleTimers()
 				}
 				
-				#Enter-SleepState
+				Enter-SleepState
 				$idleSeconds = 0
 				Write-Log "System be woke. Resuming monitoring." "INFO"
 				
