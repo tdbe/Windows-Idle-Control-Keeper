@@ -12,7 +12,7 @@
 
 	**WICK - Windows Idle Control Keeper**
 
-	This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, network, storage, mouse, and peak sound value, instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+	This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; using instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
 
 	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
@@ -78,7 +78,7 @@
 
 	### Note: 
 
-	I don't vibecode anything I consider even remotely reliable, and this script is read-through and tested. But here I tried out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
+	I don't vibecode anything I consider even remotely reliable, but here I tried out LLMs. (Don't worry it's all read-through, tested, and very re-written by me.) Otherwise I wouldn't be caught dead writing, for free, 700 lines of powershell script of all things. I used: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4. They're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 	## Run & Parameters:
 
