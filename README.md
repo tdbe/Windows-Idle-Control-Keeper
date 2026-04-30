@@ -2,7 +2,7 @@
 
 # Intro:
 
-[Saul Goodman voice] **Can't get reliable sleep? Feeling like it's out of your control? Well fret not! Just run this script and start counting your sheep!**
+[Saul Goodman voice] **Can't get reliable sleep? Feeling like it's out of your control? Well fret not, just run this script and you can start counting those sheep!**
 
 **WICK - Windows Idle Control Keeper**
 
@@ -10,7 +10,7 @@ This script detects Idle activity with your specific thresholds and conditions, 
 
 I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
-# Features, Dependencies, Log Example, Notes, Parameters:
+# Features, Dependencies, Log Example, Notes, Run & Parameters:
 
 ## Features:
 
@@ -74,15 +74,61 @@ I've always nuked Modern Standby from every PC I touched, because we have litera
 
 I don't vibecode anything I consider even remotely reliable, and this script is read-through and tested. But here I tried out LLMs, otherwise I wouldn't be caught dead writing 700 lines of powershell script of all things. I used qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4; they're "great" (within 5-10% of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. It only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
-## Parameters:
+## Run & Parameters:
 
 Parameters you can set when calling the script or adding it to Task Scheduler (the ones you skip will have defaults).
 To see all parameters and their description, run this command: `get-help ./windows_idle_control_keeper.ps1 -detailed`
 
+### Run in a powershell terminal window, examples:
+
 ```
-e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
 
 or
 
-e.g. ./windows_idle_control_keeper.ps1 -FollowTheSameSleepTimeSettingAsYourPowerPlan $false -OnlyThisScriptCanCauseWindowsToSleep $true -FollowTheSameSleepTimeSettingAsYourPowerPlan $true -FallbackIdleMinutes 30 -IdleDurationMinutes 720 -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$false -OnlyThisScriptCanCauseWindowsToSleep:$true -IdleDurationMinutes:720 -LogToConsoleVerbose:$false # other flags -etc. -etc.
+
+```
+
+### Path parameters to check and/or add modified versions:
+
+
+```
+.PARAMETER -PycawAudioCheckerPath
+  Full path to the Python script used to detect audio playback.  
+  (default: "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
+
+.PARAMETER -PythonPath
+  Full path to the Python executable used to run the audio checker script.
+  (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
+
+.PARAMETER -PauseFlagPath
+  Path to a flag file. If this file exists, the script pauses monitoring and skips sleep.  
+  Allows manual pause/resume by creating/deleting the file.
+  (default: "C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+
+.PARAMETER -LogPath
+  Full path to the log file (default: "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
+
+```
+
+### Run in Task Scheduler:
+
+#### Program/script: 
+
+```
+powershell.exe
+```
+
+#### Add arguments (window opens as minimized):
+
+```
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+```
+
+#### Add arguments (no window, runs in background completely hidden):
+
+```
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+
 ```
