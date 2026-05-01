@@ -6,7 +6,7 @@
 
 **WICK - Windows Idle Control Keeper**
 
-This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; using instances per time period, to determine if an Idle timer should continue or be broken. It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; using instances per time period, to determine if an Idle timer should continue or be broken. It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can also trigger them on demand).
 
 I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
@@ -24,7 +24,7 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 - Can be paused while running by creating a `.ignore_running_Windows_Idle_Control_Keeper_script` flag file (e.g. renamed empty txt file).
 - Logs what's going on, at LogPath, so you know at what time Idle state was broken and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
-- It does not affect and is not affected by (auto) windows screen locking, or (auto) turning off the display.
+- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can also trigger them on demand).
 
 ## Dependencies:
 
@@ -46,25 +46,37 @@ were sleeping or somehow lagging a lot, Resetting idle counter.
 [2026-04-30 00:13:38] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:15:49] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:18:03] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:20:18] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec, Resetting idle counter.
+[2026-04-30 00:20:18] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter.
 [2026-04-30 00:22:27] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:24:35] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:26:53] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:29:07] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:31:16] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec, Resetting idle counter.
+[2026-04-30 00:31:16] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter.
 [2026-04-30 00:33:22] [INFO] [IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:35:41] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:38:00] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:42:30] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:44:38] [INFO] [IDLE BREAKER] Mouse moved 160.6 px > 10, Resetting idle counter.
+[2026-04-30 00:44:38] [INFO] [IDLE BREAKER] Mouse/touch/keyboard activity registered 1 seconds ago. Resetting idle counter.
 [2026-04-30 00:46:52] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:49:18] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:51:39] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
 [2026-04-30 00:53:57] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | MouseDelta: 0 px | Idle: 0 min / 60 min
+[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: $secondsSinceLastInputInfo 91 s ago | Idle: 0 min / 60 min
 ```
 
 ## Notes: 
+
+### Note: 
+
+Tested on Windows 11 LTSC, laptop and PC.
+
+### Note:
+
+This script cannot and will never: listen to your sounds, key presses, taps and clicks, connect to the internet or network. It only asks for, reads, and logs, when an event of a certain category happened, does not know what data it had.
+
+### Note:
+
+I built in a 60 second failsafe, before which this script won't do anything. So you can't screw yourself over e.g. set a 1s sleep timeout, or force lock etc. So you have 1 minute to fix it after wake or even on startup even if you set it to start at system start via task scheduler.
 
 ### Note: 
 
@@ -72,7 +84,7 @@ I've always nuked Modern Standby from every PC I touched, because we have litera
 
 ### Note: 
 
-I don't vibecode anything I consider even remotely reliable, but here I tried out LLMs. (Don't worry it's all read-through, tested, and very re-written by me.) Otherwise I wouldn't be caught dead writing, for free, 700 lines of powershell script of all things. I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
+I don't vibecode anything I consider even remotely reliable, but here I tried out LLMs. (Don't worry it's all read-through, tested, and very re-written by me.) Otherwise I wouldn't be caught dead writing, for free, 1000 lines of powershell script of all things. I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 ## Run & Parameters:
 
@@ -87,16 +99,15 @@ get-help "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -detailed
 ### Run in a powershell terminal window, examples:
 
 ```
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true # other flags -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -PreventAndReplaceWindowsAutoSleep:$true # other flags -etc. -etc.
 
 or
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$false -OnlyThisScriptCanCauseWindowsToSleep:$true -IdleDurationMinutes:720 -LogToConsoleVerbose:$false # other flags -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$false -UserSpecifiedSleepIdleTimeMinutes:720 -PreventAndReplaceWindowsAutoSleep:$true -LockPcAtThisIdleTimeSeconds:300 -TurnOnScreensaverAtThisIdleTimeSeconds:0 -TurnOffDisplayAtThisIdleTimeSeconds:600 # other flags -etc. -etc.
 
 ```
 
 ### Path parameters to check and/or add modified versions:
-
 
 ```
 .PARAMETER -PycawAudioCheckerPath
@@ -127,11 +138,12 @@ powershell.exe
 #### Add arguments (window opens as minimized):
 
 ```
--NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true #  other flags -etc. -etc.
 ```
 
 #### Add arguments (no window, runs in background completely hidden):
 
 ```
--NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepTimeSettingAsYourPowerPlan:$true -FallbackIdleMinutes:30 -OnlyThisScriptCanCauseWindowsToSleep:$true #  other flags -etc. -etc.
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true #  other flags -etc. -etc.
 ```
+
