@@ -22,14 +22,14 @@
 	- Does not require administrator permission.
 	- Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
 	- Shows warning / abort window for $AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
-	- Dynamically reads (every minute) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times.
-	- Determines idle by accumulating sustained activity events over certain timeframes, through checks every second: based on if there's CPU, Network, sorage (without waking sleeping hard disks), audio, and mouse activity.
-	- Can prevent windows from sleeping until this script decides it's time to sleep.
+	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times.
+	- Determines idle by accumulating sustained activity events of configurable frequency and amplitude over certain timeframes, through samples every ~second (with delta time): based on if there's CPU, Network, sorage (without waking sleeping hard disks), audio, and input activity.
+	- Can prevent windows from sleeping/hibernate until this script decides it's time.
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
-	- Can be paused while running by creating a `.ignore_running_Windows_Idle_Control_Keeper_script` flag file (e.g. renamed empty txt file).
-	- Logs what's going on to Windows' Event Viewer - Applicaton Log (only idle on (not immediate) and idle off), and logs to file at LogPath, so you know at what time Idle state was broken and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
-	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can also trigger them on demand).
+	- Can be paused while running by creating an empty `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
+	- Logs what's going on to Windows' Event Viewer - Applicaton Log (only idle on (after 1m of idle) and idle off). Also logs to file at LogPath, so you know at what time Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 	## Dependencies:
 
