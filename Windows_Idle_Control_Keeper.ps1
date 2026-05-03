@@ -11,9 +11,9 @@
 
 	**WICK - Windows Idle Control Keeper**
 
-	This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows Sleep on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; using instances per time period, to determine if an Idle timer should continue or be broken. It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can also trigger them on demand).
+	This script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, mouse, and peak Sound value; counting idle-breaking event frequency and amplitude per time periods, to determine if an Idle timer should continue or be broken. It's Windows Power Plan aware, including display off and screensaver schedule, and maintains windows screen locking. No admin required.
 
-	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using ancient and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
+	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using obscure and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
 	# Features, Dependencies, Log Example, Notes, Run & Parameters:
 
@@ -21,31 +21,32 @@
 
 	- Does not require administrator permission.
 	- Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
-	- Shows warning / abort window for $SleepAbortWindowCountdownSeconds before triggering a sleep (if in an interactive session (not locked or logged out)).
-	- Dynamically reads (every minute) from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times.
+	- Shows warning / abort window for $AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
+	- Dynamically reads (every minute) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times.
 	- Determines idle by accumulating sustained activity events over certain timeframes, through checks every second: based on if there's CPU, Network, sorage (without waking sleeping hard disks), audio, and mouse activity.
 	- Can prevent windows from sleeping until this script decides it's time to sleep.
-	- Can set a sleep time for longer than 5h (the max that Windows power plan allows for some gormless reason).
+	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 	- Can be paused while running by creating a `.ignore_running_Windows_Idle_Control_Keeper_script` flag file (e.g. renamed empty txt file).
-	- Logs what's going on, at LogPath, so you know at what time Idle state was broken and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+	- Logs what's going on to Windows' Event Viewer - Applicaton Log (only idle on (not immediate) and idle off), and logs to file at LogPath, so you know at what time Idle state was broken and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can also trigger them on demand).
 
 	## Dependencies:
 
-	- python (and the `checkIfAudioIsPlaying.py` script, which requires `pip install pycaw`)
+	- python (and the `checkIfAudioIsPlaying.py` script for custom volume peak thresholds. It requires `pip install pycaw`.)
 	- virtually any .net (C# capability) installed on the system (for `SetThreadExecutionState`)
 	- powershell 5.1 (the latest is powershell 7+)
 	- You need to check that the paths are correct / to your liking. Set the corresponding "*Path" parameters.
+	- No admin requirements
 
 	## Log Example:
 
 	```
 	[2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
 	[2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
-	[2026-04-30 00:11:58] [INFO] Power plan idle timeout: 60 min: sleep=3600 sec, hibernate=3600 sec
-	[2026-04-30 00:11:58] [INFO]   Using windows power plan's minimum(sleep, hibernate) value as the idle timeout
-	(checks the current active power plan value every: 60 sec)
+	[2026-04-30 00:11:58] [INFO] Power plan sleep idle timeout: 30 min; sleep=1800 sec
+	[2026-04-30 00:11:58] [INFO] Power plan hibernate idle timeout: 60 min; hibernate=3600 sec
+	[2026-04-30 00:11:58] [INFO]   Using windows power plan's sleep and hiberante values: 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
 	[2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 	were sleeping or somehow lagging a lot, Resetting idle counter.
 	[2026-04-30 00:13:38] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
@@ -66,7 +67,7 @@
 	[2026-04-30 00:49:18] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
 	[2026-04-30 00:51:39] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
 	[2026-04-30 00:53:57] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-	[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: $secondsSinceLastInputInfo 91 s ago | Idle: 0 min / 60 min
+	[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0 min | Sleep: 30 min | Hibernate: 60 min | Display Off: 0 sec | ScreenSaver: 0 sec
 	```
 
 	## Notes: 
@@ -77,7 +78,7 @@
 
 	### Note:
 	
-	This script cannot and will never: listen to your sounds, key presses, taps and clicks, connect to the internet or network. It only asks for, reads, and logs, when an event of a certain category happened, does not know what data it had.
+	This script cannot and will never: ask for administrator privileges, listen to your sounds, key presses, taps and clicks, connect to the internet or network. It only asks for, reads, and logs, when an event of a certain category happened, does not know what data it had.
 
 	### Note:
 	
@@ -85,11 +86,15 @@
 
 	### Note: 
 
+	Because it doesn't use admin rights, while $PreventAndReplaceWindowsAutoSleep is $true, this script can't check if other processes requested that the system not sleep, e.g. an active remote desktop connection while the PC is otherwise within your idle thresholds; so it won't respect their request. You could fix this by either setting $PreventAndReplaceWindowsAutoSleep to $false, or by running this script as admin and uncomment the `ctrl+f:[respectOtherApps]` code blocks.
+
+	### Note:
+
 	I've always nuked Modern Standby from every PC I touched, because we have literally 0.0f low-power hardware and protocol standards, and I don't want constant 100W power draw, and for laptops my battery to run out in 2 hours while "sleeping" with the lid closed (Microsoft is the most infuriating thing in the history of ever). You can have a look at how I printed and fetched the sleep AC/DC settings, and figure out the parsing of anything else if you want. PRs welcome.
 
 	### Note: 
 
-	I don't vibecode anything I consider even remotely reliable, but here I tried out LLMs. (Don't worry it's all read-through, tested, and very re-written by me.) Otherwise I wouldn't be caught dead writing, for free, 1000 lines of powershell script of all things. I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the audio checking I had to research and write myself in python after many wildly off LLM solutions.
+	I wouldn't be caught dead writing for free 1000+ lines of powershell script of all things, so for this I tried out LLMs. I don't consider llm output even remotely reliable, but this is all verified and very re-written by me. For those curious: I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4, locally. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the peak audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 	## Run & Parameters:
 
@@ -134,13 +139,16 @@
 
 
 .PARAMETER PreventAndReplaceWindowsAutoSleep
-  Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep!  
-  Ensures only this script can trigger sleep. (default: $true)
+  Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
   
 .PARAMETER FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan
-  Read idle timeout from Windows power plan. (default: $true)
+  Read idle timeout values from Windows power plan (sleep, hibernate, display). Can still be overridden by the user defined sleep, hibernate, display off, screensaver time, if set to greater than zero (and whichever comes first will be triggered, unless you PreventAndReplaceWindowsAutoSleep:$true). (default: $true)
 
 .PARAMETER UserSpecifiedSleepIdleTimeMinutes
+  Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set.  
+  Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
+  
+  .PARAMETER UserSpecifiedHibernateIdleTimeMinutes
   Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set.  
   Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
   
@@ -166,18 +174,24 @@
   Seconds window to check for sustained activity. (default: 6)
 
 .PARAMETER ActivityDetectionPeriodSecondsAudio
-  Separate timeout for audio - counts if there was constant sound in this last period of seconds. (default: 5)
+  Separate timeout for audio - counts if there was constant sound in this last period of seconds with a custom sound peak threshold to e.g. avoid background noise. (default: 5)
 
 .PARAMETER LockPcAtThisIdleTimeSeconds 
-  If not zero ((and due to failsafe) actually if greater than 60) will lock pc at this idle time, which can be earlier than when Windows decides to do it. (default: 0)
+  If not zero ((and due to failsafe) actually if greater than FailsafeTimeSeconds) will lock pc at this idle time, which can be earlier than when Windows decides to do it. (default: 0)
+
+.PARAMETER IdleSecondsBeforeWeBroadcastSystemIdleEvent
+  How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Applicaton Log (regardless of when the dysplay is turned off or screensaver turns on or anything else). (default: 60)
 
 .PARAMETER DiskBlacklistDrives
   Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them.  
   Keep in mind the NetworkThresholdKBps setting.  
   (default: @("E", "F"))
-
+  
+.PARAMETER Settings_File_Windows_Idle_Control_Keeper_txt
+  These settings can be edited while the script is running and the script will read them every SettingsPollIntervalSeconds. (default: "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
+  
 .PARAMETER PycawAudioCheckerPath
-  Full path to the Python script used to detect audio playback.  
+  Full path to the Python script used to detect audio playback with custom threshold.  
   (default: "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
 
 .PARAMETER PythonPath
@@ -217,10 +231,16 @@
   I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task schedule. (default: 59)
 #>
 
+# Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
+#.PARAMETER RespectOtherAppsSleepExecutionPreventionFlags
+#  Respects other apps if/when they do what we ourselves do with the -PreventAndReplaceWindowsAutoSleep flag. (default: $false)
+
+
 param(
-    [bool]$PreventAndReplaceWindowsAutoSleep = $true, # Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep!
+    [bool]$PreventAndReplaceWindowsAutoSleep = $true, # Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). 
     [bool]$FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan = $true, # polled every minute so it knows if you switched to battery or if the power plan changed.
     [int]$UserSpecifiedSleepIdleTimeMinutes = 30, # Using this you can set more than the weird 5h max limit that windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless somehow the power plan is inaccessible).
+	[int]$UserSpecifiedHibernateIdleTimeMinutes = 30, # Using this you can set more than the weird 5h max limit that windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless somehow the power plan is inaccessible).
 	[int]$TurnOnScreensaverAtThisIdleTimeSeconds = 0, # Zero means it doesn't trigger (or the system screensaver setting is used).
 	[int]$TurnOffDisplayAtThisIdleTimeSeconds = 0, # If nonzero, this does override the power plan when FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan is true. Zero means it doesn't trigger (or the system power setting is used).
     [double]$CpuThresholdPercent = 7,
@@ -230,36 +250,40 @@ param(
     #[int]$MouseThresholdPixels = 10, # If mouse moved more than this number of pixels.
     [int]$ActivityDetectionPeriodSeconds = 6, # we determine if idle was broken, if enough activity existed in the last $ActivityDetectionPeriodSeconds seconds.
 	[int]$ActiveSamplesWithinInterval = 3, # how many instances (seconds) of activity must be detected within the last $ActivityDetectionPeriodSeconds seconds for us to consider that activity an idle breaker.
-	[int]$ActivityDetectionPeriodSecondsAudio = 5, # Separate timeout for audio, this one just simply counts if there was constant sound in this last period of seconds. This way a windows alert sound doesn't break idle.
+	[int]$ActivityDetectionPeriodSecondsAudio = 5, # Separate timeout for audio, this one just simply counts if there was constant sound in this last period of seconds. Has a custom sound peak threshold to e.g. avoid background noise.
 	[int]$LockPcAtThisIdleTimeSeconds = 0, # if not zero ((and due to failsafe) actually if greater than 60) will lock pc at this idle time.
+	[int]$IdleSecondsBeforeWeBroadcastSystemIdleEvent = 60, # how much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Applicaton Log (regardless of when the dysplay is turned off or screensaver turns on or anything else).
 	[string[]]$DiskBlacklistDrives = @("E", "F"),
+	# Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
+	#[bool]$RespectOtherAppsSleepExecutionPreventionFlags = $false, # Respects other apps if/when they do what we ourselves do with the -PreventAndReplaceWindowsAutoSleep flag.
+    [string]$Settings_File_Windows_Idle_Control_Keeper_txt = "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt", # these settings can be edited while the script is running and the script will read them every $SettingsPollIntervalSeconds
     [string]$PycawAudioCheckerPath = "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py",
     [string]$PythonPath = "$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe",
 	[string]$LogPath = "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log",
     [string]$PauseFlagPath = "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script",
-    [int]$LogMaxAgeDays = 30,
+	[int]$LogMaxAgeDays = 30,
     [int]$LogMaxSizeMB = 10,
 	[int]$logToFileIntervalSeconds = 60, # To prevent writing to file every second while you're using the PC, it won't log unless it's been idle for this many seconds.
 	[bool]$LogToConsoleVerbose = $true, # Whether to log to the console (not log file) as often as there is an event in the constant loop
-    [int]$SleepAbortWindowCountdownSeconds = 60,
+    [int]$AbortWindowCountdownSeconds = 60,
 	[int]$SettingsPollIntervalSeconds = 60,
-	[int]$FailsafeTimeSeconds = 59 # I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task scheduler.
-	#[int]$SampleIntervalSec = 1
+	[int]$FailsafeTimeSeconds = 59, # I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task scheduler.
+	[bool]$pauseScript = $false # this is so the settings file can in real time pause or resume the script
+	
 )
+#[int]$SampleIntervalSec = 1
 
 $script:g_CurrentSleepIdleTimeMinutes = $UserSpecifiedSleepIdleTimeMinutes
+$script:g_CurrentHibernateIdleTimeMinutes = $UserSpecifiedHibernateIdleTimeMinutes
 $script:g_DisplayTimeoutDurationSeconds = 0
 $script:g_DisplayTurnedOff = $false
 $script:g_ScreensaverTimeoutDurationSeconds = 0
 $script:g_ScreenSaverStarted = $false
 $script:g_PcLockedOnDemand = $false
+$script:g_PreventSleep_ES = $false
 
 $script:g_myUnixTimeEpochStart = Get-Date '2026-01-01'
 $script:g_minutesPassedLastFrame = 0
-
-# NOTE: / TODO: If you ever want to lock the pc on your own terms before windows does, you can use this:
-# Add-Type -MemberDefinition "[DllImport(\"user32.dll\")] public static extern bool LockWorkStation();" -Name LockScreen -Namespace NativeMethods
-# [NativeMethods.LockScreen]::LockWorkStation()
 
 #always add type definitions outside of functions (and do the null check) otherwise you're compiling code every function call and also potentially leaking
 $script:g_typeName = 'WindowsSleepWrangler'
@@ -287,6 +311,72 @@ if (-not ($script:g_typeName -as [type])) {
 "@
 
 	Add-Type -TypeDefinition $code -Language CSharp
+}
+
+
+# powercfg /requests
+#SYSTEM:
+#[DRIVER] Realtek High Definition Audio (INTELAUDIO\FUNC_01&VEN_10EC&DEV_0285&SUBSYS_10431493&REV_1000\5&1f865b95&0&0001)
+#An audio stream is currently in use.
+#[PROCESS] \Device\HarddiskVolume3\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+
+# check if other processes reqeusted to not idle sleep
+# Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
+# but, we can't run powercfg /requests without admin so we can't use this actually..
+function Test-OtherSystemExecutionStateHeld {
+    [CmdletBinding()]
+    param(
+        [bool]$areWePreventingIdle = $true
+    )
+
+    $output = powercfg /requests 2>&1
+    #if ($LASTEXITCODE -ne 0) { return $false }
+
+    $lines = $output -split "`r?`n"
+    $inSystemBlock = $false
+    $systemEntries = @()
+
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        Write-Log "~~~~~ trimmed: $trimmed" "Info"
+        if ($trimmed -eq "SYSTEM:") {
+            $inSystemBlock = $true
+            continue
+        }
+		
+		if ($trimmed -eq "AWAYMODE:") {
+            $inSystemBlock = $false
+            break
+        }
+
+        if ($inSystemBlock) {
+            # Stop block parsing at empty line or next section header
+            #if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed -match #"^(AWAYMODE|DISPLAY|SERVICE|DRIVER|GLOBAL|APPLICATION):") {
+            #    break
+            #}
+            
+            # Count lines that start with [*] pattern
+            if ($trimmed -match '^\s*\[[^\]]+\]\s') {
+                $systemEntries += $line
+            }
+        }
+    }
+
+    $count = $systemEntries.Count
+
+    if ($count -ge 2) {
+        return $true
+    }
+
+    if ($count -eq 1) {
+        $isOurPS = $systemEntries[0] -match 'powershell\.exe'
+        if ($isOurPS -and $areWePreventingIdle) {
+            return $true
+        }
+        return $false
+    }
+
+    return $false
 }
 
 # plugged in means AC power in power plan, battery means DC power. Important for sleep timers (different per AC / DC)
@@ -324,6 +414,11 @@ if (-not ($script:g_typeName -as [type])) {
 }
 
 function Turn-Display-Off {
+	# it's possible that if thread execution state is set to ES_SYSTEM_REQUIRED (to prevent auto sleep), windows will also not lock the desktop - the security & locking side of things is obscure and may vary by version or policy or drivers even.
+	if ($PreventAndReplaceWindowsAutoSleep -eq $true) {
+		Lock-PC
+	}
+	
 	$script:g_DisplayTurnedOff = $true
 	Write-Log "Turning off Display. g_DisplayTurnedOff: $script:g_DisplayTurnedOff" "Info"
 	[Display]::TurnOff()
@@ -472,6 +567,8 @@ function Get-DisplayTimeoutSeconds {
 
 # --- Helper: Read idle timeout from power plan (in minutes) ---
 function Get-PowerPlanIdleTimeoutMinutes {
+	[CmdletBinding()]
+    [OutputType([PSCustomObject])]
 	param(
         [bool]$isAC = $false
     )
@@ -545,39 +642,79 @@ function Get-PowerPlanIdleTimeoutMinutes {
 			Write-Host-Wrapper "polled hibernateSec: $hibernateSec" "INFO"
 		}
 		
-        # Determine effective timeout (min of sleep/hibernate, or 0 if disabled)
-        $effectiveSec = 0
-        if ($sleepSec -gt 0 -and $hibernateSec -gt 0) {
-            $effectiveSec = [math]::Min($sleepSec, $hibernateSec)
-        } elseif ($sleepSec -gt 0) {
-            $effectiveSec = $sleepSec
-        } elseif ($hibernateSec -gt 0) {
-            $effectiveSec = $hibernateSec
-        }
-		
         # Convert to minutes, fallback if disabled
-        if ($effectiveSec -le 0) {
+        if ($sleepSec -le 0) {
             Write-Log "Power plan sleep idle timeout: disabled, using fallback: $UserSpecifiedSleepIdleTimeMinutes min" "INFO"
-			Write-Log "effectiveSec: $UserSpecifiedSleepIdleTimeMinutes" "INFO"
+			Write-Log "sleepSec: $UserSpecifiedSleepIdleTimeMinutes" "INFO"
             return $UserSpecifiedSleepIdleTimeMinutes
         }
-
-		#Write-Log "effectiveSec: $effectiveSec" "INFO"
-		Write-Host-Wrapper "effectiveSec: $effectiveSec" "INFO"
-
-        $minutes = [math]::Round($effectiveSec / 60)
-        if($UserSpecifiedSleepIdleTimeMinutes -ne $minutes) {
-			Write-Log "Power plan sleep idle timeout: $minutes min: sleep=$sleepSec sec, hibernate=$hibernateSec sec" "INFO"
+        $sleepMinutes = [math]::Round($sleepSec / 60)
+        if($UserSpecifiedSleepIdleTimeMinutes -ne $sleepMinutes) {
+			Write-Log "Power plan sleep idle timeout: $sleepMinutes min; sleep=$sleepSec sec" "INFO"
 		}
-        return $minutes
+		
+		# Convert to minutes, fallback if disabled
+        if ($hibernateSec -le 0) {
+            Write-Log "Power plan hibernate idle timeout: disabled, using fallback: $UserSpecifiedHibernateIdleTimeMinutes min" "INFO"
+			Write-Log "sleepSec: $UserSpecifiedHibernateIdleTimeMinutes" "INFO"
+            return $UserSpecifiedHibernateIdleTimeMinutes
+        }
+        $hibernateMinutes = [math]::Round($hibernateSec / 60)
+        if($UserSpecifiedHibernateIdleTimeMinutes -ne $hibernateMinutes) {
+			Write-Log "Power plan hibernate idle timeout: $hibernateMinutes min; hibernate=$hibernateSec sec" "INFO"
+		}
+				
+		# Return named properties (PS 5.2 compatible)
+		[PSCustomObject]@{
+			sleepMinutesVal = $sleepMinutes
+			hibernateMinutesVal = $hibernateMinutes
+		}
     }
     catch {
-        Write-Log "Failed to read power plan: $_, using fallback: $UserSpecifiedSleepIdleTimeMinutes min" "WARN"
-        return $UserSpecifiedSleepIdleTimeMinutes
+        Write-Log "Failed to read power plan: $_, using fallback sleep: $UserSpecifiedSleepIdleTimeMinutes min, and fallback hibernate: $UserSpecifiedHibernateIdleTimeMinutes min" "WARN"
+		# Return named properties (PS 5.2 compatible)
+		[PSCustomObject]@{
+			sleepMinutesVal = $UserSpecifiedSleepIdleTimeMinutes
+			hibernateMinutesVal = $UserSpecifiedHibernateIdleTimeMinutes
+		}
     }
 }
 
-# --- Logging Setup (unchanged) ---
+# --- Logging Setup ---
+# logs to Windows > Event Viewer > Windows Logs > Applicaton. It will have the date and time of the event. These can be queried by scripts.
+function LogSystemEvent_IdleOn {
+    [CmdletBinding()]
+    param()
+	
+	$script:g_isIdle = $true
+
+    $LogName   = "Application" # writing to the "System" log requires admin privileges
+    $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
+	$Category  = 69
+    $EventId   = 420
+    $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
+    $Message   = "[WICK: IDLE] System is idle according to the Windows_Idle_Control_Keeper.ps1. (IdleSecondsBeforeWeBroadcastSystemIdleEvent: $IdleSecondsBeforeWeBroadcastSystemIdleEvent.)"
+
+    Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
+}
+
+# logs to Windows > Event Viewer > Windows Logs > Applicaton. It will have the date and time of the event. These can be queried by scripts.
+function LogSystemEvent_IdleOff {
+    [CmdletBinding()]
+    param()
+
+	$script:g_isIdle = $false
+
+    $LogName   = "Application" # writing to the "System" log requires admin privileges
+    $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
+    $Category  = 69
+    $EventId   = 420
+    $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
+    $Message   = "[WICK: NOT Idle] System stopped being idle according to the Windows_Idle_Control_Keeper.ps1"
+
+    Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
+}
+
 $script:g_LogDir = Split-Path $LogPath -Parent
 if (-not (Test-Path $script:g_LogDir)) {
     try {
@@ -685,6 +822,14 @@ function Enter-SleepState {
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
         Write-Log "Sleep failed! Win32 error: $err" "ERROR"
+    }
+}
+
+function Enter-HibernateState {
+    $result = [PowerManagement]::SetSuspendState($true, $true, $false)
+    if (-not $result) {
+        $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        Write-Log "Hibernate failed! Win32 error: $err" "ERROR"
     }
 }
 
@@ -892,15 +1037,17 @@ $script:g_isPluggedIn = IsComputerPluggedIn
 
 #Write-Log "  Dynamic idle timeout (checking the current active power plan value every: $SettingsPollIntervalSeconds)"
 if ($FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan) {
-    $script:g_CurrentSleepIdleTimeMinutes = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
-    Write-Log "  Using windows power plan's minimum(sleep, hibernate) value as the idle timeout: $script:g_CurrentSleepIdleTimeMinutes min. (We check to update this value every: SettingsPollIntervalSeconds: $SettingsPollIntervalSeconds sec.)" "INFO"
+	$tuple = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
+	$script:g_CurrentSleepIdleTimeMinutes = $tuple.sleepMinutesVal
+	$script:g_CurrentHibernateIdleTimeMinutes = $tuple.hibernateMinutesVal
+    Write-Log "  Using windows power plan's sleep and hiberante values: $script:g_CurrentSleepIdleTimeMinutes min and $script:g_CurrentHibernateIdleTimeMinutes min. (We check to update this value every: SettingsPollIntervalSeconds: $SettingsPollIntervalSeconds sec.)" "INFO"
 } else {
 	$script:g_CurrentSleepIdleTimeMinutes = $UserSpecifiedSleepIdleTimeMinutes
     Write-Log "  Using manual idle timeout value: system considered idle at: $UserSpecifiedSleepIdleTimeMinutes min." "INFO"
 }
 
 if ($PreventAndReplaceWindowsAutoSleep) {
-	Write-Log "Because PreventAndReplaceWindowsAutoSleep: $PreventAndReplaceWindowsAutoSleep, we need to manually trigger the display to turn off at the power plan's display setting time, and also trigger the screensaver at its time if it exists:" "INFO"
+	Write-Log "Because PreventAndReplaceWindowsAutoSleep: $PreventAndReplaceWindowsAutoSleep, we need to manually trigger the display to turn off at the power plan's display setting time (and also lock), and also trigger the screensaver at its time if it exists:" "INFO"
 		
 	if ($TurnOffDisplayAtThisIdleTimeSeconds -gt 0) {
 		$script:g_DisplayTimeoutDurationSeconds = $TurnOffDisplayAtThisIdleTimeSeconds
@@ -941,6 +1088,7 @@ if ($PreventAndReplaceWindowsAutoSleep) {
 $script:g_maxSamples = [int]([math]::Ceiling($ActivityDetectionPeriodSeconds))# / $SampleIntervalSec))
 $script:g_maxSamplesAudio = [int]([math]::Ceiling($ActivityDetectionPeriodSecondsAudio))# / $SampleIntervalSec))
 $script:g_idleSeconds = 0.0
+$script:g_isIdle = $false
 $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:g_lastElapsedSeconds = 0.0
 
@@ -957,6 +1105,7 @@ if (Test-Path $PauseFlagPath) {
 
 # NOTE: if this script is frozen or closed unexpectedly in a way that [WindowsSleepWrangler]::StopIgnoringIdleTimers() doesn't get called, windows may not go to sleep again until it is called or until it's restarted. But since we use try - finally, it should auto clean up after itself unless you somehow freeze the thread.
 if($PreventAndReplaceWindowsAutoSleep -eq $true){
+	$script:g_PreventSleep_ES = $true
 	[WindowsSleepWrangler]::IgnoreIdleTimers()
 }
 
@@ -983,15 +1132,68 @@ try {
 		}
 		$script:g_minutesPassedLastFrame = $minutesPassed
 		
-		if($script:g_idleSeconds -lt 0) {
+		if ($script:g_idleSeconds -lt 0) {
 			$script:g_idleSeconds += $deltaTimeSeconds
 			Write-Log "Failsafe period: $script:g_idleSeconds s < 0" "INFO"
 			continue
 		}
 		
-		if (Test-Path $PauseFlagPath) {
+		if ($script:g_idleSeconds -gt $IdleSecondsBeforeWeBroadcastSystemIdleEvent -and $script:g_isIdle -eq $false) {
+			LogSystemEvent_IdleOn
+		}
+		
+		# Poll power plan timeout every $SettingsPollIntervalSeconds updates
+		$script:g_nextsettingsPoll--
+		if ($script:g_nextsettingsPoll -le 0) {
+			$script:g_isPluggedIn = IsComputerPluggedIn
+			if ($FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan) {
+				$tuple = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
+				$newSleepTimeout = $tuple.sleepMinutesVal
+				$newHibernateTimeout = $tuple.hibernateMinutesVal
+				if ($newSleepTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
+					Write-Log "Power plan idle timeout changed: $script:g_CurrentSleepIdleTimeMinutes to $newSleepTimeout min." "INFO"
+					$script:g_CurrentSleepIdleTimeMinutes = $newSleepTimeout
+				}
+				if ($newHibernateTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
+					Write-Log "Power plan idle timeout changed: $script:g_CurrentHibernateIdleTimeMinutes to $newHibernateTimeout min." "INFO"
+					$script:g_CurrentHibernateIdleTimeMinutes = $newHibernateTimeout
+				}
+			}
+			
+			if ($PreventAndReplaceWindowsAutoSleep) {
+				if ($TurnOffDisplayAtThisIdleTimeSeconds -eq 0) {
+					$newDisplayTimeoutDurationSeconds = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
+					if($newDisplayTimeoutDurationSeconds -ne $script:g_DisplayTimeoutDurationSeconds) {
+						Write-Log "  System g_DisplayTimeoutDurationSeconds changed: $script:g_DisplayTimeoutDurationSeconds to $newDisplayTimeoutDurationSeconds seconds." "INFO"
+						$script:g_DisplayTimeoutDurationSeconds = $newDisplayTimeoutDurationSeconds
+					}
+				}
+				
+				if ($TurnOnScreensaverAtThisIdleTimeSeconds -eq 0) {
+					$newScreensaverTimeoutDurationSeconds = Get-ScreensaverTimeoutSeconds
+					if($newScreensaverTimeoutDurationSeconds -ne $script:g_ScreensaverTimeoutDurationSeconds) {
+						Write-Log "  System g_ScreensaverTimeoutDurationSeconds changed: $script:g_ScreensaverTimeoutDurationSeconds to $newScreensaverTimeoutDurationSeconds seconds." "INFO"
+						$script:g_ScreensaverTimeoutDurationSeconds = $newScreensaverTimeoutDurationSeconds
+					}
+				}
+			}
+			
+			$script:g_nextsettingsPoll = $SettingsPollIntervalSeconds
+		}
+		
+		if ((Test-Path $PauseFlagPath) -eq $true -or $pauseScript -eq $true) {
 			$script:g_idleSeconds = 0.0
+			if ($script:g_isIdle -eq $true) {
+				LogSystemEvent_IdleOff
+			}
+			if ($script:g_PreventSleep_ES -eq $true -and $PreventAndReplaceWindowsAutoSleep -eq $true){
+				$script:g_PreventSleep_ES = $false
+				[WindowsSleepWrangler]::StopIgnoringIdleTimers()
+			}
 			continue
+		} elseif ($script:g_PreventSleep_ES -eq $false -and $PreventAndReplaceWindowsAutoSleep -eq $true) {
+			$script:g_PreventSleep_ES = $true
+			[WindowsSleepWrangler]::IgnoreIdleTimers()
 		}
 		
 		# CPU
@@ -1122,7 +1324,6 @@ try {
 		}
 		
 		
-
 		# Log to file sometimes, and to console some other times
 		if (($script:g_idleSeconds -ge $logToFileIntervalSeconds -and $hasSustainedActivity -eq $true) -or ($script:g_idleSeconds -ge $logToFileIntervalSeconds -and $script:g_nextsettingsPoll -le $ActivityDetectionPeriodSeconds)) {
 			$mouseLog = " "
@@ -1132,7 +1333,7 @@ try {
 			} else {
 				$mouseLog = "(mouse check skipped)"
 			}
-			$statusMessage = "[idleSeconds: $script:g_idleSeconds] CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,2)) min / $script:g_CurrentSleepIdleTimeMinutes min"
+			$statusMessage = "[idleSeconds: $script:g_idleSeconds] CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,2)) min | Sleep: $script:g_CurrentSleepIdleTimeMinutes min | Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | Display Off: $script:g_DisplayTimeoutDurationSeconds sec | ScreenSaver: $script:g_ScreensaverTimeoutDurationSeconds sec"
 			Write-Log $statusMessage "INFO"
 		} elseif ($LogToConsoleVerbose) {
 			$mouseLog = " "
@@ -1142,54 +1343,23 @@ try {
 			} else {
 				$mouseLog = "(mouse check skipped)"
 			}
-			$statusMessage = "[idleSeconds: $script:g_idleSeconds] CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,2)) min / $script:g_CurrentSleepIdleTimeMinutes min"
+			$statusMessage = "[idleSeconds: $script:g_idleSeconds] CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,2)) min | Sleep: $script:g_CurrentSleepIdleTimeMinutes min | Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | Display Off: $script:g_DisplayTimeoutDurationSeconds sec | ScreenSaver: $script:g_ScreensaverTimeoutDurationSeconds sec"
 			Write-Host-Wrapper $statusMessage "INFO"
 		}
 
 		if ($hasSustainedActivity) {
 			$script:g_idleSeconds = 0.0
+			if ($script:g_isIdle -eq $true) {
+				LogSystemEvent_IdleOff
+			}
 			$script:g_cpuHistory.Clear()
 			$script:g_diskHistory.Clear()
 			$script:g_netHistory.Clear()
 			$script:g_audioHistory.Clear()
 		} else {
-			#$script:g_idleSeconds += $SampleIntervalSec
 			$script:g_idleSeconds += $deltaTimeSeconds
 		}
 
-		# Poll power plan timeout every $SettingsPollIntervalSeconds seconds
-		$script:g_nextsettingsPoll--
-		if ($script:g_nextsettingsPoll -le 0) {
-			$script:g_isPluggedIn = IsComputerPluggedIn
-			if ($FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan) {
-				$newTimeout = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
-				if ($newTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
-					Write-Log "Power plan idle timeout changed: $script:g_CurrentSleepIdleTimeMinutes to $newTimeout min." "INFO"
-					$script:g_CurrentSleepIdleTimeMinutes = $newTimeout
-				}
-			}
-			
-			if ($PreventAndReplaceWindowsAutoSleep) {
-				if ($TurnOffDisplayAtThisIdleTimeSeconds -eq 0) {
-					$Newg_DisplayTimeoutDurationSeconds = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
-					if($Newg_DisplayTimeoutDurationSeconds -ne $script:g_DisplayTimeoutDurationSeconds) {
-						Write-Log "  System g_DisplayTimeoutDurationSeconds changed: $script:g_DisplayTimeoutDurationSeconds to $Newg_DisplayTimeoutDurationSeconds seconds." "INFO"
-						$script:g_DisplayTimeoutDurationSeconds = $Newg_DisplayTimeoutDurationSeconds
-					}
-				}
-				
-				if ($TurnOnScreensaverAtThisIdleTimeSeconds -eq 0) {
-					$Newg_ScreensaverTimeoutDurationSeconds = Get-ScreensaverTimeoutSeconds
-					if($Newg_ScreensaverTimeoutDurationSeconds -ne $script:g_ScreensaverTimeoutDurationSeconds) {
-						Write-Log "  System g_ScreensaverTimeoutDurationSeconds changed: $script:g_ScreensaverTimeoutDurationSeconds to $Newg_ScreensaverTimeoutDurationSeconds seconds." "INFO"
-						$script:g_ScreensaverTimeoutDurationSeconds = $Newg_ScreensaverTimeoutDurationSeconds
-					}
-				}
-			}
-			
-			$script:g_nextsettingsPoll = $SettingsPollIntervalSeconds
-		}
-		
 		if($inputBasedActivityThisFrame -eq $false) {
 			# Check if we are in charge of turning off the display or turning on any screensaver, and do it if it's time
 			if ($PreventAndReplaceWindowsAutoSleep) {
@@ -1217,36 +1387,66 @@ try {
 			Lock-PC
 		}
 
-		# Check if ready to sleep
-		if ($script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
-			$abort = Show-AbortDialog -Seconds $SleepAbortWindowCountdownSeconds
+		# Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
+		#if ($RespectOtherAppsSleepExecutionPreventionFlags -eq $false -or (Test-OtherSystemExecutionStateHeld -eq $false -and $RespectOtherAppsSleepExecutionPreventionFlags -eq $true)) {
+			# Check if ready to sleep
+			if ($script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
+				$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds
 
-			if ($abort) {
-				Write-Log "User aborted sleep." "INFO"
-				$script:g_idleSeconds = 0.0
-			} else {
-				Write-Log "Proceeding to sleep because no abort or non-interactive session..." "INFO"
-				#if (Test-Path $PauseFlagPath) {
-				#    Remove-Item $PauseFlagPath -Force
-				#    Write-Log "Deleted flag file: $PauseFlagPath" "INFO"
-				#}
-				
-				if($PreventAndReplaceWindowsAutoSleep -eq $true){
-					[WindowsSleepWrangler]::StopIgnoringIdleTimers()
-				}
-				
-				Enter-SleepState
-				$script:g_idleSeconds = 0.0
-				Write-Log "System be woke. Resuming monitoring." "INFO"
-				
-				if($PreventAndReplaceWindowsAutoSleep -eq $true){
-					[WindowsSleepWrangler]::IgnoreIdleTimers()
+				if ($abort) {
+					Write-Log "User aborted sleep." "INFO"
+					$script:g_idleSeconds = 0.0
+					if ($script:g_isIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				} else {
+					Write-Log "Proceeding to sleep because no abort or non-interactive session..." "INFO"
+					#if (Test-Path $PauseFlagPath) {
+					#    Remove-Item $PauseFlagPath -Force
+					#    Write-Log "Deleted flag file: $PauseFlagPath" "INFO"
+					#}
+					
+					Enter-SleepState
+					$script:g_idleSeconds = 0.0
+					if ($script:g_isIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+					Write-Log "System be woke. Resuming monitoring." "INFO"
 				}
 			}
-		}
+			# Check if ready to hibernate
+			if ($script:g_idleSeconds -ge ($script:g_CurrentHibernateIdleTimeMinutes * 60)) {
+				$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds
+
+				if ($abort) {
+					Write-Log "User aborted hibernate." "INFO"
+					$script:g_idleSeconds = 0.0
+					if ($script:g_isIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				} else {
+					Write-Log "Proceeding to hibernate because no abort or non-interactive session..." "INFO"
+					#if (Test-Path $PauseFlagPath) {
+					#    Remove-Item $PauseFlagPath -Force
+					#    Write-Log "Deleted flag file: $PauseFlagPath" "INFO"
+					#}
+					
+					Enter-HibernateState
+					$script:g_idleSeconds = 0.0
+					if ($script:g_isIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+					Write-Log "System be woke. Resuming monitoring." "INFO"
+				}
+			}
+		#}
 	}
 } finally {
 	if($PreventAndReplaceWindowsAutoSleep -eq $true){
+		$script:g_PreventSleep_ES = $false
 		[WindowsSleepWrangler]::StopIgnoringIdleTimers()
+	}
+	if ($script:g_isIdle -eq $true) {
+		LogSystemEvent_IdleOff
 	}
 }
