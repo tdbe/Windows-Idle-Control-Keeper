@@ -17,14 +17,14 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Does not require administrator permission.
 - Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
 - Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
-- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times.
-- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause or tweak settings while the script is running (every FileSettingsPollIntervalSeconds).
-- Determines idle by accumulating sustained activity events of configurable frequency and amplitude over certain timeframes, through samples every ~second (with delta time): based on if there's CPU, Network, sorage (without waking sleeping hard disks), audio, and input activity.
-- Can prevent windows from sleeping/hibernate until this script decides it's time.
+- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
+- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalSeconds) (there's a console flag: -CliParamsAlwaysOverwriteSettingsFile).
+- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
+- Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 - Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 - Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
-- Can be paused while running by creating an empty `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-- Logs what's going on to Windows' Event Viewer - Applicaton Log (only idle on (after 1m of idle) and idle off). Also logs to file at LogPath, so you know at what time Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+- Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
+- Logs what's going on, to Windows' Event Viewer - Applicaton Log (only idle_on (after 1m of idle) and idle_off). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 - It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 ## Dependencies:
@@ -42,28 +42,28 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 [2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
 [2026-04-30 00:11:58] [INFO] Power plan sleep idle timeout: 30 min; sleep=1800 sec
 [2026-04-30 00:11:58] [INFO] Power plan hibernate idle timeout: 60 min; hibernate=3600 sec
-[2026-04-30 00:11:58] [INFO]   Using windows power plan's sleep and hiberante values: 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
+[2026-04-30 00:11:58] [INFO]   You set to use windows power plan's sleep and hiberante values: 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
 [2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 were sleeping or somehow lagging a lot, Resetting idle counter.
-[2026-04-30 00:13:38] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:15:49] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:18:03] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:20:18] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter.
-[2026-04-30 00:22:27] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:24:35] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:26:53] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:29:07] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:31:16] [INFO] [IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter.
-[2026-04-30 00:33:22] [INFO] [IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:35:41] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:38:00] [INFO] [IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:42:30] [INFO] [IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:44:38] [INFO] [IDLE BREAKER] Mouse/touch/keyboard activity registered 1 seconds ago. Resetting idle counter.
-[2026-04-30 00:46:52] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:49:18] [INFO] [IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:51:39] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:53:57] [INFO] [IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec
-[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 0 sec | T ScreenSaver: 0 sec)
+[2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 1.97975]][deltaTime: 1.81188]
+[2026-04-30 00:15:49] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 131.58716][deltaTime: 1.79505]
+[2026-04-30 00:18:03] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.36724][deltaTime: 1.80448]
+[2026-04-30 00:20:18] [INFO][IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter. [idleSeconds: 135.39535][deltaTime: 1.83311]
+[2026-04-30 00:22:27] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 129.7384][deltaTime: 1.80238]
+[2026-04-30 00:24:35] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 128.48579][deltaTime: 1.81196]
+[2026-04-30 00:26:53] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.36093][deltaTime: 1.80977]
+[2026-04-30 00:29:07] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.53758][deltaTime: 1.80943]
+[2026-04-30 00:31:16] [INFO][IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter. [idleSeconds: 129.49264][deltaTime: 1.82225]
+[2026-04-30 00:33:22] [INFO][IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec. [idleSeconds: 126.15309][deltaTime: 1.80812]
+[2026-04-30 00:35:41] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73624][deltaTime: 1.81147]
+[2026-04-30 00:38:00] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 139.63062][deltaTime: 1.80641]
+[2026-04-30 00:42:30] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 270.65825][deltaTime: 1.81357]
+[2026-04-30 00:44:38] [INFO][IDLE BREAKER] Mouse/touch/keyboard activity registered 1 seconds ago. Resetting idle counter. [idleSeconds: 128.70253][deltaTime: 1.81204]
+[2026-04-30 00:46:52] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.8361][deltaTime: 1.80762]
+[2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
+[2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
+[2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
+[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 0 sec | T ScreenSaver: 0 sec). [idleSeconds: 2.52849][deltaTime: 1.83315]
 ```
 
 ## Notes: 
@@ -90,7 +90,7 @@ I've always nuked Modern Standby from every PC I touched, because we have litera
 
 ### Note: 
 
-I wouldn't be caught dead writing for free 2000 lines of powershell script of all things, so for this I tried out LLMs. I don't consider llm output even remotely reliable, but this is all verified and very re-written by me. For those curious: I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4, locally. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and the .PARAM list. Also the peak audio checking I had to research and write myself in python after many wildly off LLM solutions.
+I wouldn't be caught dead writing for free 2000 lines of powershell script of all things, so for this I tried out LLMs. I don't consider llm output even remotely reliable, but this is all verified and very re-written by me. For those curious: I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4, locally. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and mostly the .PARAM & settings handling. Also the peak audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 ## Run & Parameters:
 
