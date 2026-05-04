@@ -1,0 +1,146 @@
+#~*---- Windows Idle Control Keeper Settings File
+#~*--------------------------------------------------------------------------------------------------#
+
+#~*-------- You can use this file to change settings even while the script is running. 
+#~*------------ The script will sample these settings every $FileSettingsPollIntervalSeconds.
+#~*------------ The entries in this settings file, even if default values, will overwrite the command line parameters unless the command line has the -CliParamsAlwaysOverwriteSettingsFile:$true
+#~*--------------------------------------------------------------------------------------------------#
+
+#~*------------ Format: key:value # optional description (ignored after #)
+#~*------------ Supports: booleans ($true/$false), integers, strings, arrays (@("a","b"))
+#~*------------ Lines starting with # are comments and ignored.
+#~*------------ Anything after # on a line is ignored, even if it contains $ or colons.
+#~*--------------------------------------------------------------------------------------------------#
+
+
+
+
+PauseScript:$false
+#~*------------ You can pause and resume the script in real time (every FileSettingsPollIntervalSeconds) using this parameter.
+#~*------------ NOTE: This param gets read even if -CliParamsAlwaysOverwriteSettingsFile:$true
+#~*--------------------------------------------------------------------------------------------------#
+
+
+
+
+CliParamsAlwaysOverwriteSettingsFile:$false
+#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -CliParamsAlwaysOverwriteSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
+#~*--------------------------------------------------------------------------------------------------#
+
+PreventAndReplaceWindowsAutoSleep:$true 
+#~*------------ Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
+#~*--------------------------------------------------------------------------------------------------#
+
+FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true 
+#~*------------ Read idle timeout values from Windows power plan (sleep, hibernate, display). Can still be overridden by the user defined sleep, hibernate, display off, screensaver time, if set to greater than zero (and whichever comes first will be triggered, unless you PreventAndReplaceWindowsAutoSleep:$true). (default: $true)
+#~*--------------------------------------------------------------------------------------------------#
+
+UserSpecifiedSleepIdleTimeMinutes:30 
+#~*------------ Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
+#~*--------------------------------------------------------------------------------------------------#
+
+UserSpecifiedHibernateIdleTimeMinutes:30 
+#~*------------ Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
+#~*--------------------------------------------------------------------------------------------------#
+
+TurnOnScreensaverAtThisIdleTimeSeconds:0 
+#~*------------ Zero means it doesn't trigger (or the system screensaver setting is used). (default: 0) 
+#~*--------------------------------------------------------------------------------------------------#
+
+TurnOffDisplayAtThisIdleTimeSeconds:0 
+#~*------------ If nonzero, this does override the power plan when FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan is true. Zero means it doesn't trigger (or the system power setting is used). (default: 0) 
+#~*--------------------------------------------------------------------------------------------------#
+
+CpuThresholdPercent:7 
+#~*------------ CPU usage above this resets idle timer. (default: 7)
+#~*--------------------------------------------------------------------------------------------------#
+
+DiskThresholdKBps:1250 
+#~*------------ Disk I/O (KB/s) above this resets idle timer. (default: 1250)
+#~*--------------------------------------------------------------------------------------------------#
+
+NetworkThresholdKBps:850 
+#~*------------ Network I/O (KB/s) above this resets idle timer. (default: 850)
+#~*--------------------------------------------------------------------------------------------------#
+
+ActiveSamplesWithinInterval:3 
+#~*------------ How many threshold-breaking instances of activity must be detected within the last $ActivityDetectionPeriodSeconds seconds for us to consider that activity an idle breaker. (default: 3)
+#~*--------------------------------------------------------------------------------------------------#
+
+ActivityDetectionPeriodSeconds:6 
+#~*------------ Seconds window to check for sustained activity. (default: 6)
+#~*--------------------------------------------------------------------------------------------------#
+
+ActivityDetectionPeriodSecondsAudio:5 
+#~*------------ Separate timeout for audio - counts if there was constant sound in this last period of seconds with a custom sound peak threshold to e.g. avoid background noise. (default: 5)
+#~*--------------------------------------------------------------------------------------------------#
+
+LockPcAtThisIdleTimeSeconds:0 
+#~*------------ If not zero ((and due to failsafe) actually if greater than FailsafeTimeSeconds) will lock pc at this idle time, which can be earlier than when Windows decides to do it. (default: 0)
+#~*--------------------------------------------------------------------------------------------------#
+
+IdleSecondsBeforeWeBroadcastSystemIdleEvent:60 
+#~*------------ How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Applicaton Log (regardless of when the dysplay is turned off or screensaver turns on or anything else). (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+DiskBlacklistDrives:@("E", "F") 
+#~*------------ Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them. Keep in mind the NetworkThresholdKBps setting. (default: @("E", "F"))
+#~*--------------------------------------------------------------------------------------------------#
+
+Settings_File_Windows_Idle_Control_Keeper_txt:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
+#~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalSeconds. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
+#~*--------------------------------------------------------------------------------------------------#
+
+PycawAudioCheckerPath:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
+#~*------------ Full path to the Python script used to detect audio playback with custom threshold. (default:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
+#~*--------------------------------------------------------------------------------------------------#
+
+PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
+#~*------------ Full path to the Python executable used to run the audio checker script. (default:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
+#~*--------------------------------------------------------------------------------------------------#
+
+PauseFlagPath:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
+#~*------------ Path to a flag file. If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. (default:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+#~*--------------------------------------------------------------------------------------------------#
+
+LogPath:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log"
+#~*------------ Full path to the log file. (default:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
+#~*--------------------------------------------------------------------------------------------------#
+
+LogMaxAgeDays:30 
+#~*------------ Keep logs this many days. (default: 30)
+#~*--------------------------------------------------------------------------------------------------#
+
+LogMaxSizeMB:10 
+#~*------------ Rotate log if larger than this MB. (default: 10)
+#~*--------------------------------------------------------------------------------------------------#
+
+logToFileIntervalSeconds:60 
+#~*------------ To prevent writing to file every second while you're using the PC, it won't log unless it's been idle for this many seconds. (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+LogToConsoleVerbose:$true 
+#~*------------ Whether to log to the console (not log file) as often as there is an event in the constant loop. (default: true)
+#~*--------------------------------------------------------------------------------------------------#
+
+SleepAbortWindowCountdownSeconds:60 
+#~*------------ Seconds to show the sleep abort dialog before triggering sleep. (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+SampleIntervalSec:1 
+#~*------------ How often to sample system metrics. (default: 1)
+#~*--------------------------------------------------------------------------------------------------#
+
+SettingsPollIntervalSeconds:60 
+#~*------------ Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+FileSettingsPollIntervalSeconds:60 
+#~*------------ Dynamically reads parameters from your settings file (should run at same interval as SettingsPollIntervalSeconds, unless you're not using it (0 means not used)). (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+FailsafeTimeSeconds:59 
+#~*------------ I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task schedule. (default: 59)
+#~*--------------------------------------------------------------------------------------------------#
+
+
