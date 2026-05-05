@@ -1,3 +1,6 @@
+# Script that checks Windows system peak volumes (the "vertical bar" visualisation that bounces up and down for each volume in the mixer that is playing a sound) and prints whether any of those has exceeded the defined threshold.
+
+# Uses https://github.com/AndreMiras/pycaw - a windows python library for sound control. It doesn't "listen" to your audio.
 # If you get errors you might need to install:
 # pip install pycaw
 import sys
