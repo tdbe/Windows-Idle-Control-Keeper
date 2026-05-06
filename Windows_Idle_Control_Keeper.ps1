@@ -159,17 +159,17 @@
 
 .PARAMETER UserSpecifiedSleepIdleTimeMinutes
   Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set.  
-  Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
+  If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. (default: 0)
   
 .PARAMETER UserSpecifiedHibernateIdleTimeMinutes
   Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set.  
-  Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
+  If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. (default: 0)
   
 .PARAMETER TurnOnScreensaverAtThisIdleTimeSeconds
   Zero means it doesn't trigger (or the system screensaver setting is used). (default: 0) 
   
 .PARAMETER TurnOffDisplayAtThisIdleTimeSeconds
-  If nonzero, this does override the power plan when FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan is true. Zero means it doesn't trigger (or the system power setting is used). (default: 0) 
+  If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. Zero means it doesn't trigger (or the system power setting is used). (default: 0) 
    
 .PARAMETER CpuThresholdPercent
   CPU usage above this resets idle timer. (default: 7)
