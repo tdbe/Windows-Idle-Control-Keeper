@@ -2,7 +2,7 @@
 #~*--------------------------------------------------------------------------------------------------#
 
 #~*-------- You can use this file to change settings even while the script is running. 
-#~*------------ The script will sample these settings every $FileSettingsPollIntervalSeconds.
+#~*------------ The script will sample these settings every $FileSettingsPollIntervalMinutes.
 #~*------------ The entries in this settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true
 #~*--------------------------------------------------------------------------------------------------#
 
@@ -16,7 +16,7 @@
 
 
 PauseScript:$false
-#~*------------ You can pause and resume the script in real time (every FileSettingsPollIntervalSeconds) using this parameter.
+#~*------------ You can pause and resume the script in real time (every FileSettingsPollIntervalMinutes) using this parameter.
 #~*------------ NOTE: This param gets read even if -IgnoreTheSettingsFile:$true
 #~*--------------------------------------------------------------------------------------------------#
 
@@ -24,7 +24,7 @@ PauseScript:$false
 
 
 IgnoreTheSettingsFile:$false
-#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
+#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalMinutes. (default: $false)
 #~*--------------------------------------------------------------------------------------------------#
 
 PreventAndReplaceWindowsAutoSleep:$true 
@@ -43,12 +43,12 @@ UserSpecifiedHibernateIdleTimeMinutes:0
 #~*------------ Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set. If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. (default: 0)
 #~*--------------------------------------------------------------------------------------------------#
 
-TurnOnScreensaverAtThisIdleTimeSeconds:0 
-#~*------------ Zero means it doesn't trigger (or the system screensaver setting is used). (default: 0) 
+TurnOnScreensaverAtThisIdleTimeMinutes:0 
+#~*------------ Zero means it doesn't trigger (or the system screensaver setting is used). You can also use decimals e.g. '0.3' min. (default: 0) 
 #~*--------------------------------------------------------------------------------------------------#
 
-TurnOffDisplayAtThisIdleTimeSeconds:0 
-#~*------------ If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. Zero means it doesn't trigger (or the system power setting is used). (default: 0) 
+TurnOffDisplayAtThisIdleTimeMinutes:0 
+#~*------------ If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. Zero means it doesn't trigger (or the system power setting is used). You can also use decimals e.g. '0.3' min. (default: 0) 
 #~*--------------------------------------------------------------------------------------------------#
 
 CpuThresholdPercent:7 
@@ -75,8 +75,8 @@ ActivityDetectionPeriodSecondsAudio:5
 #~*------------ Separate timeout for audio - counts if there was constant sound in this last period of seconds with a custom sound peak threshold to e.g. avoid background noise. (default: 5)
 #~*--------------------------------------------------------------------------------------------------#
 
-LockPcAtThisIdleTimeSeconds:0 
-#~*------------ If not zero ((and due to failsafe) actually if greater than FailsafeTimeSeconds) will lock pc at this idle time, which can be earlier than when Windows decides to do it. (default: 0)
+LockPcAtThisIdleTimeMinutes:0
+#~*------------ If not zero ((and due to failsafe) actually if greater than FailsafeTimeMinutes) will lock pc at this idle time, which can be earlier than when Windows decides to do it. You can also use decimals e.g. '0.3' min. (default: 0)
 #~*--------------------------------------------------------------------------------------------------#
 
 IdleSecondsBeforeWeBroadcastSystemIdleEvent:60 
@@ -88,7 +88,7 @@ DiskBlacklistDrives:@("E", "F")
 #~*--------------------------------------------------------------------------------------------------#
 
 Settings_File_Windows_Idle_Control_Keeper_txt:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
-#~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalSeconds. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
+#~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
 #~*--------------------------------------------------------------------------------------------------#
 
 PycawAudioCheckerPath:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
@@ -131,16 +131,16 @@ SampleIntervalSec:1
 #~*------------ How often to sample system metrics. (default: 1)
 #~*--------------------------------------------------------------------------------------------------#
 
-SettingsPollIntervalSeconds:60 
-#~*------------ Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. (default: 60)
+SettingsPollIntervalMinutes:1 
+#~*------------ Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
 #~*--------------------------------------------------------------------------------------------------#
 
-FileSettingsPollIntervalSeconds:60 
-#~*------------ Dynamically reads parameters from your settings file (should run at same interval as SettingsPollIntervalSeconds, unless you're not using it (0 means not used)). (default: 60)
+FileSettingsPollIntervalMinutes:1
+#~*------------ Dynamically reads parameters from your settings file (should run at same interval as SettingsPollIntervalMinutes, unless you're not using it (0 means not used)). You can also use decimals e.g. '0.3' min. (default: 1)
 #~*--------------------------------------------------------------------------------------------------#
 
-FailsafeTimeSeconds:59 
-#~*------------ I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task schedule. (default: 59)
+FailsafeTimeMinutes:0.98
+#~*------------ I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task schedule. (default: 0.98)
 #~*--------------------------------------------------------------------------------------------------#
 
 
