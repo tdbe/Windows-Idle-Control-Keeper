@@ -18,13 +18,13 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
 - Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 - Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
-- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalSeconds) (there's a console flag: -CliParamsAlwaysOverwriteSettingsFile).
+- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalSeconds) (there's a flag: -IgnoreTheSettingsFile).
 - Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
 - Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 - Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 - Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 - Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-- Logs what's going on, to Windows' Event Viewer - Applicaton Log (only idle_on (after 1m of idle) and idle_off). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+- Logs what's going on, to Windows' Event Viewer - Applicaton Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 - It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 ## Dependencies:
@@ -39,10 +39,9 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 
 ```
 [2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
-[2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
-[2026-04-30 00:11:58] [INFO] Power plan sleep idle timeout: 30 min; sleep=1800 sec
-[2026-04-30 00:11:58] [INFO] Power plan hibernate idle timeout: 60 min; hibernate=3600 sec
-[2026-04-30 00:11:58] [INFO]   You set to use windows power plan's sleep and hiberante values: 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
+[2026-04-30 00:11:58] [INFO] Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
+[2026-04-30 00:11:58] [INFO] Settings path: C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt
+[2026-04-30 00:11:58] [INFO] You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
 [2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 were sleeping or somehow lagging a lot, Resetting idle counter.
 [2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 1.97975]][deltaTime: 1.81188]
@@ -105,11 +104,11 @@ get-help "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -detailed
 ### Run in a powershell terminal window, examples:
 
 ```
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true # other flags -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 
 or
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$false -UserSpecifiedSleepIdleTimeMinutes:720 -PreventAndReplaceWindowsAutoSleep:$true -LockPcAtThisIdleTimeSeconds:300 -TurnOnScreensaverAtThisIdleTimeSeconds:0 -TurnOffDisplayAtThisIdleTimeSeconds:600 -CliParamsAlwaysOverwriteSettingsFile:$true # other flags -etc. -etc.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$false -UserSpecifiedSleepIdleTimeMinutes:720 -PreventAndReplaceWindowsAutoSleep:$true -LockPcAtThisIdleTimeSeconds:300 -TurnOnScreensaverAtThisIdleTimeSeconds:0 -TurnOffDisplayAtThisIdleTimeSeconds:600 -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 
 ```
 
@@ -124,13 +123,13 @@ powershell.exe
 #### Add arguments (window opens as minimized):
 
 ```
--NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true #  other flags -etc. -etc.
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 ```
 
 #### Add arguments (no window, runs in background completely hidden):
 
 ```
--NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true #  other flags -etc. -etc.
+-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 ```
 
 #### PS:

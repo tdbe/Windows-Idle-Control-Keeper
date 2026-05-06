@@ -27,13 +27,13 @@
 	- Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
 	- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
-	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalSeconds) (there's a console flag: -CliParamsAlwaysOverwriteSettingsFile).
+	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalSeconds) (there's a flag: -IgnoreTheSettingsFile).
 	- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
 	- Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 	- Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-	- Logs what's going on, to Windows' Event Viewer - Applicaton Log (only idle_on (after 1m of idle) and idle_off). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+	- Logs what's going on, to Windows' Event Viewer - Applicaton Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 	## Dependencies:
@@ -48,10 +48,9 @@
 
 	```
 	[2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
-	[2026-04-30 00:11:58] [INFO]   Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
-	[2026-04-30 00:11:58] [INFO] Power plan sleep idle timeout: 30 min; sleep=1800 sec
-	[2026-04-30 00:11:58] [INFO] Power plan hibernate idle timeout: 60 min; hibernate=3600 sec
-	[2026-04-30 00:11:58] [INFO]   You set to use windows power plan's sleep and hiberante values: 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
+	[2026-04-30 00:11:58] [INFO] Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
+	[2026-04-30 00:11:58] [INFO] Settings path: C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt
+	[2026-04-30 00:11:58] [INFO] You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): 30 min and 60 min. (We check to update this value every: SettingsPollIntervalSeconds: 60 sec.)
 	[2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 	were sleeping or somehow lagging a lot, Resetting idle counter.
 	[2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 1.97975]][deltaTime: 1.81188]
@@ -114,11 +113,11 @@
 	### Run in a powershell terminal window, examples:
 
 	```
-	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true # other flags -etc. -etc.
+	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 
 	or
 
-	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$false -UserSpecifiedSleepIdleTimeMinutes:720 -PreventAndReplaceWindowsAutoSleep:$true -LockPcAtThisIdleTimeSeconds:300 -TurnOnScreensaverAtThisIdleTimeSeconds:0 -TurnOffDisplayAtThisIdleTimeSeconds:600 -CliParamsAlwaysOverwriteSettingsFile:$true # other flags -etc. -etc.
+	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$false -UserSpecifiedSleepIdleTimeMinutes:720 -PreventAndReplaceWindowsAutoSleep:$true -LockPcAtThisIdleTimeSeconds:300 -TurnOnScreensaverAtThisIdleTimeSeconds:0 -TurnOffDisplayAtThisIdleTimeSeconds:600 -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 
 	```
 
@@ -133,24 +132,24 @@
 	#### Add arguments (window opens as minimized):
 
 	```
-	-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true #  other flags -etc. -etc.
+	-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 	```
 
 	#### Add arguments (no window, runs in background completely hidden):
 
 	```
-	-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -CliParamsAlwaysOverwriteSettingsFile:$true #  other flags -etc. -etc.
+	-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 	```
 	
 	#### PS:
 	
 	Instead of regular params, I added $script:Config that loads from either the params ($PSBoundParameters) or the Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause or tweak settings while the script is running (every FileSettingsPollIntervalSeconds).
 	
-.PARAMETER CliParamsAlwaysOverwriteSettingsFile
-  The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -CliParamsAlwaysOverwriteSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
+.PARAMETER IgnoreTheSettingsFile
+  The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
   
 .PARAMETER PauseScript
-  You can pause and resume the script in real time (every FileSettingsPollIntervalSeconds) using this parameter in the settings file. From the cli it will simply start the script as paused (the settings file is still polled while paused). NOTE: This param gets read even if -CliParamsAlwaysOverwriteSettingsFile:$true. (default: $false)
+  You can pause and resume the script in real time (every FileSettingsPollIntervalSeconds) using this parameter in the settings file. From the cli it will simply start the script as paused (the settings file is still polled while paused). NOTE: This param gets read even if -IgnoreTheSettingsFile:$true. (default: $false)
 
 .PARAMETER PreventAndReplaceWindowsAutoSleep
   Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
@@ -257,7 +256,7 @@
 # ───────────────────────────────────────────────────────────────────────────────
 param(
 	[bool]$PauseScript,
-	[bool]$CliParamsAlwaysOverwriteSettingsFile,
+	[bool]$IgnoreTheSettingsFile,
     [bool]$PreventAndReplaceWindowsAutoSleep,
     [bool]$FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan,
     [int]$UserSpecifiedSleepIdleTimeMinutes,
@@ -294,11 +293,11 @@ param(
 # ───────────────────────────────────────────────────────────────────────────────
 $script:Config = @{
 	PauseScript 											= $false
-	CliParamsAlwaysOverwriteSettingsFile					= $false
+	IgnoreTheSettingsFile									= $false
     PreventAndReplaceWindowsAutoSleep           			= $true
     FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan 	= $true
-    UserSpecifiedSleepIdleTimeMinutes           			= 30
-    UserSpecifiedHibernateIdleTimeMinutes       			= 30
+    UserSpecifiedSleepIdleTimeMinutes           			= 0
+    UserSpecifiedHibernateIdleTimeMinutes       			= 0
     TurnOnScreensaverAtThisIdleTimeSeconds      			= 0
     TurnOffDisplayAtThisIdleTimeSeconds         			= 0
     CpuThresholdPercent                         			= 7
@@ -370,15 +369,17 @@ function Expand-EnvironmentVariables {
     }
 }
 function Update-ConfigFromSettingsFile {
-	
     $Path = $script:Config['Settings_File_Windows_Idle_Control_Keeper_txt']
 	
     if (-not (Test-Path -LiteralPath $Path)) { 
-		Write-Warning "~~~~ Settings file not found at path: $Path."
+		Write-Log "~~~~ Settings file not found at path: $Path."
 		return 
 	}
 	
-	Write-Host "||||~~~~ Updating config settings from file: $Path"
+	Write-Log "||||~~~~ Updating config settings from file: $Path"
+	if ($script:Config['IgnoreTheSettingsFile'] -eq $true) {
+		Write-Log "Skipping loading most settings from file because it's set to be overwritten by the CLI param version, because -IgnoreTheSettingsFile:$true"
+	} 
     $content = Get-Content -LiteralPath $Path
 	
     $lines = $content -split '\r?\n' | ForEach-Object {
@@ -434,12 +435,12 @@ function Update-ConfigFromSettingsFile {
                                Expand-EnvironmentVariables $cleaned
 						   }
 					
-					if ($script:Config['CliParamsAlwaysOverwriteSettingsFile'] -eq $true) {
-						Write-Host "Skipping loading: $key ($val) from file because it's set to be overwritten by the CLI param version: $cliVersion"
-					} 
+					#if ($script:Config['IgnoreTheSettingsFile'] -eq $true) {
+					#	Write-Host "Skipping loading: $key ($val) from file because it's set to be overwritten by the CLI param version: $cliVersion"
+					#} 
 					
-					if ($script:Config[$key] -ne $val -and $script:Config['CliParamsAlwaysOverwriteSettingsFile'] -eq $false -or $key -eq 'PauseScript') {
-						Write-Host "||||>>~~~~>> Updated config from file: '$key': from $($script:Config[$key]) to $val"
+					if ($script:Config[$key] -ne $val -and $script:Config['IgnoreTheSettingsFile'] -eq $false -or $key -eq 'PauseScript') {
+						Write-Log "||||>>~~~~>> Updated config from file: '$key': from $($script:Config[$key]) to $val"
 						$script:Config[$key] = $val
 					}
                 }
@@ -498,8 +499,8 @@ function LogSystemEvent_IdleOff {
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
-    $Category  = 69
-    $EventId   = 420
+    $Category  = 70
+    $EventId   = 421
     $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
     $Message   = "[WICK: NOT Idle] System stopped being idle according to the Windows_Idle_Control_Keeper.ps1"
 
@@ -946,24 +947,20 @@ function Get-PowerPlanIdleTimeoutMinutes {
 		
         # Convert to minutes, fallback if disabled
         if ($sleepSec -le 0) {
-            Write-Log "Power plan sleep idle timeout: disabled, using fallback: $script:Config['UserSpecifiedSleepIdleTimeMinutes'] min" "INFO"
-			Write-Log "sleepSec: $script:Config['UserSpecifiedSleepIdleTimeMinutes']" "INFO"
-            return $script:Config['UserSpecifiedSleepIdleTimeMinutes']
-        }
-        $sleepMinutes = [math]::Round($sleepSec / 60)
-        if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -ne $sleepMinutes) {
-			Write-Log "Power plan sleep idle timeout: $sleepMinutes min; sleep=$sleepSec sec" "INFO"
+            #Write-Log "Power plan sleep idle timeout: disabled, using fallback: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min" "INFO"
+			$sleepMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+        } else {
+			$sleepMinutes = [math]::Round($sleepSec / 60)
+			#Write-Log "Power plan sleep idle timeout: $sleepMinutes min (sleep=$sleepSec sec)" "INFO"
 		}
 		
 		# Convert to minutes, fallback if disabled
         if ($hibernateSec -le 0) {
-            Write-Log "Power plan hibernate idle timeout: disabled, using fallback: $script:Config['UserSpecifiedHibernateIdleTimeMinutes'] min" "INFO"
-			Write-Log "sleepSec: $script:Config['UserSpecifiedHibernateIdleTimeMinutes']" "INFO"
-            return $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
-        }
-        $hibernateMinutes = [math]::Round($hibernateSec / 60)
-        if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -ne $hibernateMinutes) {
-			Write-Log "Power plan hibernate idle timeout: $hibernateMinutes min; hibernate=$hibernateSec sec" "INFO"
+            #Write-Log "Power plan hibernate idle timeout: disabled, using fallback: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min" "INFO"
+            $hibernateMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+        } else {
+			$hibernateMinutes = [math]::Round($hibernateSec / 60)
+			#Write-Log "Power plan hibernate idle timeout: $hibernateMinutes min (hibernate=$hibernateSec sec)" "INFO"
 		}
 				
 		# Return named properties (PS 5.2 compatible)
@@ -973,7 +970,7 @@ function Get-PowerPlanIdleTimeoutMinutes {
 		}
     }
     catch {
-        Write-Log "Failed to read power plan: $_, using fallback sleep: $script:Config['UserSpecifiedSleepIdleTimeMinutes'] min, and fallback hibernate: $script:Config['UserSpecifiedHibernateIdleTimeMinutes'] min" "WARN"
+        Write-Log "Failed to read power plan: $_, using fallback sleep: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min, and fallback hibernate: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min" "WARN"
 		# Return named properties (PS 5.2 compatible)
 		[PSCustomObject]@{
 			sleepMinutesVal = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
@@ -1224,9 +1221,14 @@ function Show-AbortDialog {
     return ($result -eq 1)
 }
 
-# --- Main Loop ---
+# --- Main Sequence ---
 Write-Log "~*------- W.I.C.K. started. -------"
-Write-Log "  Log path: $($script:Config['LogPath'])"
+Write-Log "Log path: $($script:Config['LogPath'])"
+Write-Log "Log path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])"
+
+if (-not $script:Config['FileSettingsPollIntervalSeconds'] -eq 0) {
+	Update-ConfigFromSettingsFile
+}
 
 $script:g_isPluggedIn = IsComputerPluggedIn
 
@@ -1235,10 +1237,21 @@ if ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan']) {
 	$tuple = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
 	$script:g_CurrentSleepIdleTimeMinutes = $tuple.sleepMinutesVal
 	$script:g_CurrentHibernateIdleTimeMinutes = $tuple.hibernateMinutesVal
-    Write-Log "  You set to use windows power plan's sleep and hiberante values: $($script:g_CurrentSleepIdleTimeMinutes) min and $($script:g_CurrentHibernateIdleTimeMinutes) min. (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
+    Write-Log "You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): $($script:g_CurrentSleepIdleTimeMinutes) min and $($script:g_CurrentHibernateIdleTimeMinutes) min. (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
+	
+	if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -gt 0) {
+		Write-Log "Actually, you specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the $script:g_CurrentSleepIdleTimeMinutes min to $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min." "INFO"
+		$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+	}
+	
+	if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -gt 0) {
+		Write-Log "Actually, you specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the $script:g_CurrentHibernateIdleTimeMinutes min to $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min." "INFO"
+		$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+	}
 } else {
 	$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
-    Write-Log "  Using manual idle timeout value: system considered idle at: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min." "INFO"
+	$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+    Write-Log "Using manual sleep and hibernate timeout values (if sleep/hibernate are enabled on the system): $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min and $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min." "INFO"
 }
 
 if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
@@ -1246,27 +1259,40 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 		
 	if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
 		$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
-		Write-Log "  Using user set display timeout: $($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'])" "INFO"
+		Write-Log "Using user set display timeout: $($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'])" "INFO"
 	} else {
 		$script:g_DisplayTimeoutDurationSeconds = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
-		Write-Log "  You set to use windows power plan's g_DisplayTimeoutDurationSeconds: $($script:g_DisplayTimeoutDurationSeconds). We need this because Laptops will stop auto turning off their display if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
+		Write-Log "You set to use windows power plan's g_DisplayTimeoutDurationSeconds: $($script:g_DisplayTimeoutDurationSeconds). We need this because Laptops will stop auto turning off their display if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
 	}
 	
 	if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
 		$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
-		Write-Log "  Using user set screensaver timeout: $($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'])" "INFO"
+		Write-Log "Using user set screensaver timeout: $($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'])" "INFO"
 	} else {
 		$script:g_ScreensaverTimeoutDurationSeconds = Get-ScreensaverTimeoutSeconds
-		Write-Log "  You set to use windows power plan's g_ScreensaverTimeoutDurationSeconds: $($script:g_ScreensaverTimeoutDurationSeconds) (in case you use the screensaver). We need this because Laptops will stop auto turning on the screensaver if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
+		Write-Log "You set to use windows power plan's g_ScreensaverTimeoutDurationSeconds: $($script:g_ScreensaverTimeoutDurationSeconds) (in case you use the screensaver). We need this because Laptops will stop auto turning on the screensaver if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalSeconds: $($script:Config['SettingsPollIntervalSeconds']) sec.)" "INFO"
 	}
-	
-} elseif ($FollowTheSameSleepTimeSettingAsYourPowerPlan -eq $false) {
-	if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
-		$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
-	}
+} elseif ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] -eq $false) {
 	if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
 		$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
 	}
+	
+	if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
+		$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
+	}
+	Write-Log "Display-off timeout and Screensaver timeout (if available): $script:g_DisplayTimeoutDurationSeconds sec and $script:g_ScreensaverTimeoutDurationSeconds sec." "INFO"
+} else {
+	if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
+		$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
+	} else {
+		$script:g_DisplayTimeoutDurationSeconds = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
+	}
+	if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
+		$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
+	} else {
+		$script:g_ScreensaverTimeoutDurationSeconds = Get-ScreensaverTimeoutSeconds
+	}
+	Write-Log "Display-off timeout and Screensaver timeout (if available): $script:g_DisplayTimeoutDurationSeconds sec and $script:g_ScreensaverTimeoutDurationSeconds sec." "INFO"
 }
 
 # Load WinForms once (for mouse check)
@@ -1295,8 +1321,8 @@ $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamp
 $script:g_nextSettingsPoll = $script:Config['SettingsPollIntervalSeconds']
 $script:g_nextFileSettingsPoll = $script:Config['FileSettingsPollIntervalSeconds']
 
-if (Test-Path $script:Config['PauseFlagPath']) {
-	Write-Log "Script pause flag file is present - while loop running but skipping until flag removed or renamed." "INFO"
+if ((Test-Path $script:Config['PauseFlagPath']) -eq $true -or $script:Config['PauseScript'] -eq $true) {
+	Write-Log "Script pause flag is present - while loop running but skipping until flag removed or renamed." "INFO"
 }
 
 # NOTE: if this script is frozen or closed unexpectedly in a way that [WindowsSleepWrangler]::StopIgnoringIdleTimers() doesn't get called, windows may not go to sleep again until it is called or until it's restarted. But since we use try - finally, it should auto clean up after itself unless you somehow freeze the thread.
@@ -1306,6 +1332,7 @@ if($script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true){
 }
 
 try {
+	# --- Main Loop ---
 	while ($true) {
 		$skipThisFrame = $false
 		#Write-Log "Tick. idleSeconds: $script:g_idleSeconds" "INFO"
@@ -1328,7 +1355,12 @@ try {
 		
 		if ($script:g_idleSeconds -lt 0) {
 			$script:g_idleSeconds += $deltaTimeSeconds
-			Write-Log "Failsafe period: $script:g_idleSeconds s < 0. [deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+			
+			if ($script:g_idleSeconds -gt (-1.0 * $script:Config['FailsafeTimeSeconds'] + 5) -and $script:g_idleSeconds -lt -5) {
+				Write-Host-Wrapper "Failsafe period: $script:g_idleSeconds s < 0. [deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+			} else {
+				Write-Log "Failsafe period: $script:g_idleSeconds s < 0. [deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+			}
 			$skipThisFrame = $true
 		}
 		
@@ -1344,36 +1376,108 @@ try {
 		
 		# Poll power plan timeout every $script:Config['SettingsPollIntervalSeconds'] updates
 		$script:g_nextSettingsPoll--
-		if ($script:g_nextSettingsPoll -le 0) {			
+		if ($script:g_nextSettingsPoll -le 0) {
+			# Sliding windows for sustained detection
+			if($script:g_maxSamples -ne $script:Config['ActivityDetectionPeriodSeconds']) {
+				Write-Log "ActivityDetectionPeriodSeconds changed: $script:g_maxSamples to $($script:Config['ActivityDetectionPeriodSeconds'])." "INFO"
+				$script:g_maxSamples = $script:Config['ActivityDetectionPeriodSeconds']
+			}
+			if($script:g_maxSamplesAudio -ne $script:Config['ActivityDetectionPeriodSecondsAudio']) {
+				Write-Log "ActivityDetectionPeriodSecondsAudio changed: $script:g_maxSamplesAudio to $($script:Config['ActivityDetectionPeriodSecondsAudio'])." "INFO"
+				$script:g_maxSamplesAudio = $script:Config['ActivityDetectionPeriodSecondsAudio']
+			}
+			
 			$script:g_isPluggedIn = IsComputerPluggedIn
 			if ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan']) {
 				$tuple = Get-PowerPlanIdleTimeoutMinutes $script:g_isPluggedIn
 				$newSleepTimeout = $tuple.sleepMinutesVal
 				$newHibernateTimeout = $tuple.hibernateMinutesVal
-				if ($newSleepTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
-					Write-Log "Power plan idle timeout changed: $script:g_CurrentSleepIdleTimeMinutes to $newSleepTimeout min." "INFO"
+				
+				if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -gt 0 -and $script:g_CurrentSleepIdleTimeMinutes -ne $script:Config['UserSpecifiedSleepIdleTimeMinutes']){
+					Write-Log "You specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
+					$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+				} elseif ($newSleepTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
+					Write-Log "Power plan sleep timeout changed: $script:g_CurrentSleepIdleTimeMinutes to $newSleepTimeout min." "INFO"
 					$script:g_CurrentSleepIdleTimeMinutes = $newSleepTimeout
 				}
-				if ($newHibernateTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
-					Write-Log "Power plan idle timeout changed: $script:g_CurrentHibernateIdleTimeMinutes to $newHibernateTimeout min." "INFO"
+				
+				if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -gt 0 -and $script:g_CurrentHibernateIdleTimeMinutes -ne $script:Config['UserSpecifiedHibernateIdleTimeMinutes']) {
+					Write-Log "You specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
+					$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+				} elseif ($newHibernateTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
+					Write-Log "Power plan hibernate timeout changed: $script:g_CurrentHibernateIdleTimeMinutes to $newHibernateTimeout min." "INFO"
 					$script:g_CurrentHibernateIdleTimeMinutes = $newHibernateTimeout
 				}
+			} elseif ($script:g_CurrentSleepIdleTimeMinutes -ne $script:Config['UserSpecifiedSleepIdleTimeMinutes'] -or $script:g_CurrentHibernateIdleTimeMinutes -ne $script:Config['UserSpecifiedHibernateIdleTimeMinutes']) {
+				$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+				$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+				Write-Log "Updating manual sleep and hibernate timeout values (if sleep/hibernate are enabled on the system): $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min and $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min." "INFO"
 			}
 			
 			if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
-				if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -eq 0) {
+				if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
+					if($script:g_DisplayTimeoutDurationSeconds -ne $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']) {
+						$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
+						Write-Log "Updating user set display timeout: $($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'])" "INFO"
+					}
+				} else {
 					$newDisplayTimeoutDurationSeconds = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
 					if($newDisplayTimeoutDurationSeconds -ne $script:g_DisplayTimeoutDurationSeconds) {
-						Write-Log "  System g_DisplayTimeoutDurationSeconds changed: $script:g_DisplayTimeoutDurationSeconds to $newDisplayTimeoutDurationSeconds seconds." "INFO"
+						Write-Log "System g_DisplayTimeoutDurationSeconds changed: $script:g_DisplayTimeoutDurationSeconds to $newDisplayTimeoutDurationSeconds seconds." "INFO"
 						$script:g_DisplayTimeoutDurationSeconds = $newDisplayTimeoutDurationSeconds
 					}
 				}
 				
-				if ($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -eq 0) {
+				if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
+					if($script:g_ScreensaverTimeoutDurationSeconds -ne $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']) {
+						$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
+						Write-Log "Updating user set screensaver timeout: $($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'])" "INFO"
+					}
+				} else {
 					$newScreensaverTimeoutDurationSeconds = Get-ScreensaverTimeoutSeconds
 					if($newScreensaverTimeoutDurationSeconds -ne $script:g_ScreensaverTimeoutDurationSeconds) {
-						Write-Log "  System g_ScreensaverTimeoutDurationSeconds changed: $script:g_ScreensaverTimeoutDurationSeconds to $newScreensaverTimeoutDurationSeconds seconds." "INFO"
+						Write-Log "System g_ScreensaverTimeoutDurationSeconds changed: $script:g_ScreensaverTimeoutDurationSeconds to $newScreensaverTimeoutDurationSeconds seconds." "INFO"
 						$script:g_ScreensaverTimeoutDurationSeconds = $newScreensaverTimeoutDurationSeconds
+					}
+				}
+			} elseif ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] -eq $false) {
+				if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
+					if ($script:g_DisplayTimeoutDurationSeconds -ne $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']) {
+						$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
+						Write-Log "Display-off timeout (if available): $script:g_DisplayTimeoutDurationSeconds sec." "INFO"
+					}
+				}
+				
+				if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
+					if ($script:g_ScreensaverTimeoutDurationSeconds -ne $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']) {
+						$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
+						Write-Log "Screensaver timeout (if available): $script:g_ScreensaverTimeoutDurationSeconds sec." "INFO"
+					}
+				}
+			} else {
+				if ($script:Config['TurnOffDisplayAtThisIdleTimeSeconds'] -gt 0) {
+					if ($script:g_DisplayTimeoutDurationSeconds -ne $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']) {
+						$script:g_DisplayTimeoutDurationSeconds = $script:Config['TurnOffDisplayAtThisIdleTimeSeconds']
+						Write-Log "Display-off timeout (if available): $script:g_DisplayTimeoutDurationSeconds sec." "INFO"
+					}
+				} else {
+					$displayTimeout = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
+					if($script:g_DisplayTimeoutDurationSeconds -ne $displayTimeout) {
+						$script:g_DisplayTimeoutDurationSeconds = $displayTimeout
+						Write-Log "Display-off timeout (if available): $script:g_DisplayTimeoutDurationSeconds sec." "INFO"
+					}
+				}
+				
+				if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
+					if ($script:g_ScreensaverTimeoutDurationSeconds -ne $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']) {
+						$script:g_ScreensaverTimeoutDurationSeconds = $script:Config['TurnOnScreensaverAtThisIdleTimeSeconds']
+						Write-Log "Screensaver timeout (if available): $script:g_ScreensaverTimeoutDurationSeconds sec." "INFO"
+					}
+				} else {
+					$screensaverTimeout = Get-ScreensaverTimeoutSeconds
+					if ($script:g_ScreensaverTimeoutDurationSeconds -ne $screensaverTimeout) {
+						$script:g_ScreensaverTimeoutDurationSeconds = $screensaverTimeout
+						Write-Log "Screensaver timeout (if available): $script:g_ScreensaverTimeoutDurationSeconds sec." "INFO"
 					}
 				}
 			}
@@ -1386,7 +1490,7 @@ try {
 			if ($script:g_isIdle -eq $true) {
 				LogSystemEvent_IdleOff
 			}
-			if ($script:g_PreventSleep_ES -eq $true -and $script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true){
+			if ($script:g_PreventSleep_ES -eq $true -and $script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
 				$script:g_PreventSleep_ES = $false
 				[WindowsSleepWrangler]::StopIgnoringIdleTimers()
 			}
@@ -1511,7 +1615,7 @@ try {
 				if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 					$script:g_ScreenSaverStarted = $false
 					$script:g_DisplayTurnedOff = $false
-				} elseif ($FollowTheSameSleepTimeSettingAsYourPowerPlan -eq $false) {
+				} elseif ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] -eq $false) {
 					if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0) {
 						$script:g_ScreenSaverStarted = $false
 					}
@@ -1572,7 +1676,7 @@ try {
 					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationSeconds -and $script:g_DisplayTimeoutDurationSeconds -gt $script:Config['FailsafeTimeSeconds'] -and $script:g_idleSeconds -gt $script:g_DisplayTimeoutDurationSeconds) {
 						Turn-Display-Off
 					}
-				} elseif ($FollowTheSameSleepTimeSettingAsYourPowerPlan -eq $false) {
+				} elseif ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] -eq $false) {
 					if($script:Config['TurnOnScreensaverAtThisIdleTimeSeconds'] -gt 0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationSeconds -and $script:g_ScreensaverTimeoutDurationSeconds -gt $script:Config['FailsafeTimeSeconds'] -and $script:g_idleSeconds -gt $script:g_ScreensaverTimeoutDurationSeconds) {
 						Start-Screensaver
 					}
@@ -1581,7 +1685,7 @@ try {
 						Turn-Display-Off
 					}
 				}
-				# else NOTE: if $FollowTheSameSleepTimeSettingAsYourPowerPlan is true and $script:Config['PreventAndReplaceWindowsAutoSleep'] is false, then the PC will turn off its display and turn on its screensaver on its own, no involvement from us
+				# else NOTE: if $script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] is true and $script:Config['PreventAndReplaceWindowsAutoSleep'] is false, then the PC will turn off its display and turn on its screensaver on its own, no involvement from us
 			}
 			
 			if ($script:g_PcLockedOnDemand -eq $false -and $script:Config['LockPcAtThisIdleTimeSeconds'] -and $script:Config['LockPcAtThisIdleTimeSeconds'] -gt $script:Config['FailsafeTimeSeconds'] -and $script:g_idleSeconds -gt $script:Config['LockPcAtThisIdleTimeSeconds']) {

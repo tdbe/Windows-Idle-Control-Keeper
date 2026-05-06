@@ -3,7 +3,7 @@
 
 #~*-------- You can use this file to change settings even while the script is running. 
 #~*------------ The script will sample these settings every $FileSettingsPollIntervalSeconds.
-#~*------------ The entries in this settings file, even if default values, will overwrite the command line parameters unless the command line has the -CliParamsAlwaysOverwriteSettingsFile:$true
+#~*------------ The entries in this settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true
 #~*--------------------------------------------------------------------------------------------------#
 
 #~*------------ Format: key:value # optional description (ignored after #)
@@ -17,14 +17,14 @@
 
 PauseScript:$false
 #~*------------ You can pause and resume the script in real time (every FileSettingsPollIntervalSeconds) using this parameter.
-#~*------------ NOTE: This param gets read even if -CliParamsAlwaysOverwriteSettingsFile:$true
+#~*------------ NOTE: This param gets read even if -IgnoreTheSettingsFile:$true
 #~*--------------------------------------------------------------------------------------------------#
 
 
 
 
-CliParamsAlwaysOverwriteSettingsFile:$false
-#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -CliParamsAlwaysOverwriteSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
+IgnoreTheSettingsFile:$false
+#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalSeconds. (default: $false)
 #~*--------------------------------------------------------------------------------------------------#
 
 PreventAndReplaceWindowsAutoSleep:$true 
@@ -35,11 +35,11 @@ FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true
 #~*------------ Read idle timeout values from Windows power plan (sleep, hibernate, display). Can still be overridden by the user defined sleep, hibernate, display off, screensaver time, if set to greater than zero (and whichever comes first will be triggered, unless you PreventAndReplaceWindowsAutoSleep:$true). (default: $true)
 #~*--------------------------------------------------------------------------------------------------#
 
-UserSpecifiedSleepIdleTimeMinutes:30 
+UserSpecifiedSleepIdleTimeMinutes:0 
 #~*------------ Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
 #~*--------------------------------------------------------------------------------------------------#
 
-UserSpecifiedHibernateIdleTimeMinutes:30 
+UserSpecifiedHibernateIdleTimeMinutes:0 
 #~*------------ Using this you can set more than the weird 5h max (e.g. 720 mins (12 hours)) limit that Windows power plan lets you set. Ignored if FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true (unless the power plan is somehow inaccessible). (default: 30)
 #~*--------------------------------------------------------------------------------------------------#
 
@@ -99,7 +99,7 @@ PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
 #~*------------ Full path to the Python executable used to run the audio checker script. (default:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
 #~*--------------------------------------------------------------------------------------------------#
 
-PauseFlagPath:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
+PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
 #~*------------ Path to a flag file. If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. (default:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
 #~*--------------------------------------------------------------------------------------------------#
 
