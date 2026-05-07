@@ -1203,22 +1203,32 @@ function Get-AudioIsPlaying {
 
 # --- Show abort dialog (interactive only) ---
 function Show-AbortDialog {
-    param([int]$Seconds)
-    $retIsInteractiveSession = Test-IsInteractiveSession
-    if (-not $retIsInteractiveSession) {
-        Write-Log "Non-interactive session - skipping message box - no user session." "DEBUG"
+    [CmdletBinding()]
+    param(
+        [int]$Seconds,
+        [string]$actionName
+    )
+
+    if (-not (Test-IsInteractiveSession)) {
+        Write-Log "Non-interactive session - skipping message box." "DEBUG"
         return $false
     }
 
+    # Ensure timeout is valid (0 means wait forever)
+    if ($Seconds -le 0) { $Seconds = 10 }
+
     $title = "System Idle Sleep Warning"
     $msg = "Your PC is idle for $script:g_CurrentSleepIdleTimeMinutes minutes.`n`n" +
-           "It will sleep in $Seconds seconds.`n" +
-           "Press OK to abort."
+           "It will $actionName in $Seconds seconds.`n`n" +
+           "Press Yes to abort."
 
     $wsh = New-Object -ComObject WScript.Shell
-    $result = $wsh.Popup($msg, $Seconds, $title, 4 + 32)
+    # Cast to [int] to guarantee COM respects the timeout
+    $result = $wsh.Popup($msg, [int]$Seconds, $title, 36) # 36 = vbYesNo + vbQuestion
 
-    return ($result -eq 1)
+    # Return $true ONLY if user pressed Yes (abort)
+    # 6 = Yes, 7 = No, 0/-1 = Timeout (all proceed = $false)
+    return $result -eq 6
 }
 
 # --- Main Sequence ---
@@ -1240,12 +1250,12 @@ if ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan']) {
     Write-Log "You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): $($script:g_CurrentSleepIdleTimeMinutes) min and $($script:g_CurrentHibernateIdleTimeMinutes) min. (We check to update this value every: SettingsPollIntervalMinutes: $($script:Config['SettingsPollIntervalMinutes']) min.)" "INFO"
 	
 	if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -gt 0) {
-		Write-Log "Actually, you specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the $script:g_CurrentSleepIdleTimeMinutes min to $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min." "INFO"
+		Write-Log "    BUT, you specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the $script:g_CurrentSleepIdleTimeMinutes min to $($script:Config['UserSpecifiedSleepIdleTimeMinutes']) min." "INFO"
 		$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
 	}
 	
 	if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -gt 0) {
-		Write-Log "Actually, you specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the $script:g_CurrentHibernateIdleTimeMinutes min to $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min." "INFO"
+		Write-Log "    BUT, you specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the $script:g_CurrentHibernateIdleTimeMinutes min to $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']) min." "INFO"
 		$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
 	}
 } else {
@@ -1393,18 +1403,22 @@ try {
 				$newSleepTimeout = $tuple.sleepMinutesVal
 				$newHibernateTimeout = $tuple.hibernateMinutesVal
 				
-				if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -gt 0 -and $script:g_CurrentSleepIdleTimeMinutes -ne $script:Config['UserSpecifiedSleepIdleTimeMinutes']){
-					Write-Log "You specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
-					$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+				if($script:Config['UserSpecifiedSleepIdleTimeMinutes'] -gt 0.0){
+					if($script:g_CurrentSleepIdleTimeMinutes -ne $script:Config['UserSpecifiedSleepIdleTimeMinutes']) {
+						Write-Log "You specified UserSpecifiedSleepIdleTimeMinutes: $($script:Config['UserSpecifiedSleepIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
+						$script:g_CurrentSleepIdleTimeMinutes = $script:Config['UserSpecifiedSleepIdleTimeMinutes']
+					}
 				} elseif ($newSleepTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
 					Write-Log "Power plan sleep timeout changed: $script:g_CurrentSleepIdleTimeMinutes to $newSleepTimeout min." "INFO"
 					$script:g_CurrentSleepIdleTimeMinutes = $newSleepTimeout
 				}
 				
-				if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -gt 0 -and $script:g_CurrentHibernateIdleTimeMinutes -ne $script:Config['UserSpecifiedHibernateIdleTimeMinutes']) {
-					Write-Log "You specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
-					$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
-				} elseif ($newHibernateTimeout -ne $script:g_CurrentSleepIdleTimeMinutes) {
+				if($script:Config['UserSpecifiedHibernateIdleTimeMinutes'] -gt 0.0) {
+					if($script:g_CurrentHibernateIdleTimeMinutes -ne $script:Config['UserSpecifiedHibernateIdleTimeMinutes']) {
+						Write-Log "You specified UserSpecifiedHibernateIdleTimeMinutes: $($script:Config['UserSpecifiedHibernateIdleTimeMinutes']), so we override the power plan's value of $newSleepTimeout min." "INFO"
+						$script:g_CurrentHibernateIdleTimeMinutes = $script:Config['UserSpecifiedHibernateIdleTimeMinutes']
+					}
+				} elseif ($newHibernateTimeout -ne $script:g_CurrentHibernateIdleTimeMinutes) {
 					Write-Log "Power plan hibernate timeout changed: $script:g_CurrentHibernateIdleTimeMinutes to $newHibernateTimeout min." "INFO"
 					$script:g_CurrentHibernateIdleTimeMinutes = $newHibernateTimeout
 				}
@@ -1604,7 +1618,7 @@ try {
 					if($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']){
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-					} elseif ($script:Config['LogToConsoleVerbose']) {
+					} elseif ($script:Config['LogToConsoleVerbose'] -eq $true) {
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 					}
@@ -1614,7 +1628,6 @@ try {
 				
 					$script:g_ScreenSaverStarted = $false
 					$script:g_DisplayTurnedOff = $false
-				}
 				
 				if($script:Config['LockPcAtThisIdleTimeMinutes'] -gt 0.0) {
 					$script:g_PcLockedOnDemand = $false
@@ -1689,7 +1702,7 @@ try {
 			#if ($RespectOtherAppsSleepExecutionPreventionFlags -eq $false -or (Test-OtherSystemExecutionStateHeld -eq $false -and $RespectOtherAppsSleepExecutionPreventionFlags -eq $true)) {
 				# Check if ready to sleep
 				if ($script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
-					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds
+					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "sleep"
 
 					if ($abort) {
 						Write-Log "User aborted sleep." "INFO"
@@ -1714,7 +1727,7 @@ try {
 				}
 				# Check if ready to hibernate
 				if ($script:g_idleSeconds -ge ($script:g_CurrentHibernateIdleTimeMinutes * 60)) {
-					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds
+					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "hibernate"
 
 					if ($abort) {
 						Write-Log "User aborted hibernate." "INFO"
