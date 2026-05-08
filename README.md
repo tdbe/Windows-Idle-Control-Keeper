@@ -62,7 +62,7 @@ were sleeping or somehow lagging a lot, Resetting idle counter.
 [2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
 [2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
 [2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
-[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 0.0 min | T ScreenSaver: 0.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
+[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
 ```
 
 ## Notes: 

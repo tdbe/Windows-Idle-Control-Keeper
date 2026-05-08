@@ -71,7 +71,7 @@
 	[2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
 	[2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
 	[2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
-	[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 0.0 min | T ScreenSaver: 0.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
+	[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
 	```
 
 	## Notes: 
@@ -719,6 +719,7 @@ if (-not ($script:g_typeName -as [type])) {
 function Turn-Display-Off {
 	# it's possible that if thread execution state is set to ES_SYSTEM_REQUIRED (to prevent auto sleep), windows will also not lock the desktop - the security & locking side of things is obscure and may vary by version or policy or drivers even.
 	if ($script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
+		Write-Log "Locking PC because we're turning off the display and PreventAndReplaceWindowsAutoSleep is $true." "Info"
 		Lock-PC
 	}
 	
@@ -1656,7 +1657,7 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Log $statusMessage "INFO"
 			} elseif ($script:Config['LogToConsoleVerbose']) {
 				$mouseLog = " "
@@ -1666,7 +1667,7 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Host-Wrapper $statusMessage "INFO"
 			}
 
@@ -1707,6 +1708,7 @@ try {
 			
 			if ($script:g_PcLockedOnDemand -eq $false -and $script:Config['LockPcAtThisIdleTimeMinutes'] -and $script:Config['LockPcAtThisIdleTimeMinutes'] -gt $script:Config['FailsafeTimeMinutes'] -and [math]::Round($script:g_idleSeconds / 60) -gt $script:Config['LockPcAtThisIdleTimeMinutes']) {
 				# Write-Log "g_PcLockedOnDemand: $script:g_PcLockedOnDemand, LockPcAtThisIdleTimeMinutes: $script:Config['LockPcAtThisIdleTimeMinutes'], FailsafeTimeMinutes: $script:Config['FailsafeTimeMinutes'], idleSeconds: $script:g_idleSeconds" "INFO"
+				Write-Log "Locking PC on demand at $($script:Config['LockPcAtThisIdleTimeMinutes']) min of idle." "Info"
 				Lock-PC
 			}
 
