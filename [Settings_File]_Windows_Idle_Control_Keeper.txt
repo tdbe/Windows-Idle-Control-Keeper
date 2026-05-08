@@ -71,8 +71,8 @@ ActivityDetectionPeriodSeconds:6
 #~*------------ Seconds window to check for sustained activity. (default: 6)
 #~*--------------------------------------------------------------------------------------------------#
 
-ActivityDetectionPeriodSecondsAudio:5 
-#~*------------ Separate timeout for audio - counts if there was constant sound in this last period of seconds with a custom sound peak threshold to e.g. avoid background noise. (default: 5)
+ActivityDetectionPeriodSamplesAudio:5 
+#~*------------ Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
 #~*--------------------------------------------------------------------------------------------------#
 
 LockPcAtThisIdleTimeMinutes:0

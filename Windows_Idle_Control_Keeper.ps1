@@ -56,12 +56,12 @@
 	[2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 1.97975]][deltaTime: 1.81188]
 	[2026-04-30 00:15:49] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 131.58716][deltaTime: 1.79505]
 	[2026-04-30 00:18:03] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.36724][deltaTime: 1.80448]
-	[2026-04-30 00:20:18] [INFO][IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter. [idleSeconds: 135.39535][deltaTime: 1.83311]
+	[2026-04-30 00:20:18] [INFO][IDLE BREAKER] Sustained audio playing for 5 samples. Resetting idle counter. [idleSeconds: 135.39535][deltaTime: 1.83311]
 	[2026-04-30 00:22:27] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 129.7384][deltaTime: 1.80238]
 	[2026-04-30 00:24:35] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 128.48579][deltaTime: 1.81196]
 	[2026-04-30 00:26:53] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.36093][deltaTime: 1.80977]
 	[2026-04-30 00:29:07] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.53758][deltaTime: 1.80943]
-	[2026-04-30 00:31:16] [INFO][IDLE BREAKER] Sustained audio playing for 5 sec. Resetting idle counter. [idleSeconds: 129.49264][deltaTime: 1.82225]
+	[2026-04-30 00:31:16] [INFO][IDLE BREAKER] Sustained audio playing for 5 samples. Resetting idle counter. [idleSeconds: 129.49264][deltaTime: 1.82225]
 	[2026-04-30 00:33:22] [INFO][IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec. [idleSeconds: 126.15309][deltaTime: 1.80812]
 	[2026-04-30 00:35:41] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73624][deltaTime: 1.81147]
 	[2026-04-30 00:38:00] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 139.63062][deltaTime: 1.80641]
@@ -186,8 +186,8 @@
 .PARAMETER ActivityDetectionPeriodSeconds
   Seconds window to check for sustained activity. (default: 6)
 
-.PARAMETER ActivityDetectionPeriodSecondsAudio
-  Separate timeout for audio - counts if there was constant sound in this last period of seconds with a custom sound peak threshold to e.g. avoid background noise. (default: 5)
+.PARAMETER ActivityDetectionPeriodSamplesAudio
+  Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
 
 .PARAMETER LockPcAtThisIdleTimeMinutes 
   If not zero ((and due to failsafe) actually if greater than FailsafeTimeMinutes) will lock pc at this idle time, which can be earlier than when Windows decides to do it. You can also use decimals e.g. '0.3' min. (default: 0)
@@ -268,7 +268,7 @@ param(
     [int]$NetworkThresholdKBps,
     [int]$ActiveSamplesWithinInterval,
     [int]$ActivityDetectionPeriodSeconds,
-    [int]$ActivityDetectionPeriodSecondsAudio,
+    [int]$ActivityDetectionPeriodSamplesAudio,
     [int]$LockPcAtThisIdleTimeMinutes,
     [int]$IdleSecondsBeforeWeBroadcastSystemIdleEvent,
     [string[]]$DiskBlacklistDrives,
@@ -305,7 +305,7 @@ $script:Config = @{
     NetworkThresholdKBps                        			= 850
     ActiveSamplesWithinInterval                 			= 3
     ActivityDetectionPeriodSeconds              			= 6
-    ActivityDetectionPeriodSecondsAudio         			= 5
+    ActivityDetectionPeriodSamplesAudio         			= 5
     LockPcAtThisIdleTimeMinutes                 			= 0
     IdleSecondsBeforeWeBroadcastSystemIdleEvent 			= 60
     DiskBlacklistDrives                         			= @("E", "F")
@@ -993,6 +993,18 @@ function Test-IsInteractiveSession {
     }
 }
 
+# --- Detect if session is unlocked, without admin ---
+function Test-IsSessionUnlocked {
+	# Get the active console session information
+	$session = query session console 2>$null
+
+	if ($session -match "Active") {
+		return $true
+	} else {
+		return $false
+	}
+}
+
 #always add type definitions outside of functions (and do the null check) otherwise you're compiling code every function call and also potentially leaking
 $script:g_typeName = 'PowerManagement'
 if (-not ($script:g_typeName -as [type])) {
@@ -1317,7 +1329,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 
 # Sliding windows for sustained detection
 $script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSeconds']))# / $script:Config['SampleIntervalSec']))
-$script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSecondsAudio']))# / $script:Config['SampleIntervalSec']))
+$script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamplesAudio']))# / $script:Config['SampleIntervalSec']))
 $script:g_idleSeconds = 0.0
 $script:g_isIdle = $false
 $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -1392,9 +1404,9 @@ try {
 				Write-Log "ActivityDetectionPeriodSeconds changed: $script:g_maxSamples to $($script:Config['ActivityDetectionPeriodSeconds'])." "INFO"
 				$script:g_maxSamples = $script:Config['ActivityDetectionPeriodSeconds']
 			}
-			if($script:g_maxSamplesAudio -ne $script:Config['ActivityDetectionPeriodSecondsAudio']) {
-				Write-Log "ActivityDetectionPeriodSecondsAudio changed: $script:g_maxSamplesAudio to $($script:Config['ActivityDetectionPeriodSecondsAudio'])." "INFO"
-				$script:g_maxSamplesAudio = $script:Config['ActivityDetectionPeriodSecondsAudio']
+			if($script:g_maxSamplesAudio -ne $script:Config['ActivityDetectionPeriodSamplesAudio']) {
+				Write-Log "ActivityDetectionPeriodSamplesAudio changed: $script:g_maxSamplesAudio to $($script:Config['ActivityDetectionPeriodSamplesAudio'])." "INFO"
+				$script:g_maxSamplesAudio = $script:Config['ActivityDetectionPeriodSamplesAudio']
 			}
 			
 			$script:g_isPluggedIn = IsComputerPluggedIn
@@ -1600,11 +1612,11 @@ try {
 
 			# Audio: all samples must be true
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
-				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSecondsAudio']){
+				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSecondsAudio']) sec, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSecondsAudio']) sec, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -1613,7 +1625,7 @@ try {
 			#if ($mouseMoved) {
 			$inputBasedActivityThisFrame = $false
 			$secondsSinceLastInputInfo = Get-SecondsSinceLastInputInfo
-			if ($secondsSinceLastInputInfo -and $secondsSinceLastInputInfo -le $script:g_idleSeconds) {
+			if ($secondsSinceLastInputInfo -le $script:g_idleSeconds) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSeconds']) {
 					if($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']){
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
@@ -1622,14 +1634,14 @@ try {
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 					}
-					$hasSustainedActivity = $true
-					$inputBasedActivityThisFrame = $true
 				#}
+				$hasSustainedActivity = $true
+				$inputBasedActivityThisFrame = $true
+			
+				$script:g_ScreenSaverStarted = $false
+				$script:g_DisplayTurnedOff = $false
 				
-					$script:g_ScreenSaverStarted = $false
-					$script:g_DisplayTurnedOff = $false
-				
-				if($script:Config['LockPcAtThisIdleTimeMinutes'] -gt 0.0) {
+				if(Test-IsSessionUnlocked -eq $true) {
 					$script:g_PcLockedOnDemand = $false
 				}
 			}
