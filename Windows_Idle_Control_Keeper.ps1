@@ -33,7 +33,7 @@
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 	- Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-	- Logs what's going on, to Windows' Event Viewer - Applicaton Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+	- Logs what's going on, to Windows' Event Viewer - Application Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 	## Dependencies:
@@ -146,13 +146,13 @@
 	Instead of regular params, I added $script:Config that loads from either the params ($PSBoundParameters) or the Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause or tweak settings while the script is running (every FileSettingsPollIntervalMinutes).
 	
 .PARAMETER IgnoreTheSettingsFile
-  The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalMinutes. (default: $false)
+  The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true (it will always still read the PauseScript parameter). The settings file is read every FileSettingsPollIntervalMinutes. (default: $false)
   
 .PARAMETER PauseScript
   You can pause and resume the script in real time (every FileSettingsPollIntervalMinutes) using this parameter in the settings file. From the cli it will simply start the script as paused (the settings file is still polled while paused). NOTE: This param gets read even if -IgnoreTheSettingsFile:$true. (default: $false)
 
 .PARAMETER PreventAndReplaceWindowsAutoSleep
-  Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
+  Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event, plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
   
 .PARAMETER FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan
   Read idle timeout values from Windows power plan (sleep, hibernate, display). Can still be overridden by the user defined sleep, hibernate, display off, screensaver time, if set to greater than zero (and whichever comes first will be triggered, unless you PreventAndReplaceWindowsAutoSleep:$true). (default: $true)
@@ -193,7 +193,7 @@
   If not zero ((and due to failsafe) actually if greater than FailsafeTimeMinutes) will lock pc at this idle time, which can be earlier than when Windows decides to do it. You can also use decimals e.g. '0.3' min. (default: 0)
 
 .PARAMETER IdleSecondsBeforeWeBroadcastSystemIdleEvent
-  How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Applicaton Log (regardless of when the dysplay is turned off or screensaver turns on or anything else). (default: 60)
+  How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Application Log (regardless of when the display is turned off or screensaver turns on or anything else). (default: 60)
 
 .PARAMETER DiskBlacklistDrives
   Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them.  
@@ -473,7 +473,7 @@ $script:g_minutesPassedLastFrame = 0
 
 
 # --- Logging Setup ---
-# logs to Windows > Event Viewer > Windows Logs > Applicaton. It will have the date and time of the event. These can be queried by scripts.
+# logs to Windows > Event Viewer > Windows Logs > Application. It will have the date and time of the event. These can be queried by scripts.
 function LogSystemEvent_IdleOn {
     [CmdletBinding()]
     param()
@@ -490,7 +490,7 @@ function LogSystemEvent_IdleOn {
     Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
 }
 
-# logs to Windows > Event Viewer > Windows Logs > Applicaton. It will have the date and time of the event. These can be queried by scripts.
+# logs to Windows > Event Viewer > Windows Logs > Application. It will have the date and time of the event. These can be queried by scripts.
 function LogSystemEvent_IdleOff {
     [CmdletBinding()]
     param()

@@ -24,11 +24,11 @@ PauseScript:$false
 
 
 IgnoreTheSettingsFile:$false
-#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true. The settings file is read every FileSettingsPollIntervalMinutes. (default: $false)
+#~*------------ The entries in the settings file, even if default values, will overwrite the command line parameters unless the command line has the -IgnoreTheSettingsFile:$true (it will always still read the PauseScript parameter). The settings file is read every FileSettingsPollIntervalMinutes. (default: $false)
 #~*--------------------------------------------------------------------------------------------------#
 
 PreventAndReplaceWindowsAutoSleep:$true 
-#~*------------ Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
+#~*------------ Uses `SetThreadExecutionState` to prevent idle-based sleep commands. Note that actively triggering Sleep e.g. via the Start menu, or via an explicit function call (e.g. SetSuspendState) from some active software, or laptop lid close, will STILL cause the PC to sleep! Also, if this is set to $false, you will get windows' event, plus also this script's event (e.g. windows turns display off (if set to), and also this script turns display off (if set to) - so, whichever comes first). (default: $true)
 #~*--------------------------------------------------------------------------------------------------#
 
 FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true 
@@ -80,7 +80,7 @@ LockPcAtThisIdleTimeMinutes:0
 #~*--------------------------------------------------------------------------------------------------#
 
 IdleSecondsBeforeWeBroadcastSystemIdleEvent:60 
-#~*------------ How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Applicaton Log (regardless of when the dysplay is turned off or screensaver turns on or anything else). (default: 60)
+#~*------------ How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Application Log (regardless of when the display is turned off or screensaver turns on or anything else). (default: 60)
 #~*--------------------------------------------------------------------------------------------------#
 
 DiskBlacklistDrives:@("E", "F") 

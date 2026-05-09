@@ -24,7 +24,7 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 - Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 - Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-- Logs what's going on, to Windows' Event Viewer - Applicaton Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+- Logs what's going on, to Windows' Event Viewer - Application Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 - It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 ## Dependencies:
