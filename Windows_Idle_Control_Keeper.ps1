@@ -1,4 +1,6 @@
 <#
+.SYNOPSIS
+
 	MIT License, Copyright (c) 2026 Tudor Berechet [tdbe](https://github.com/tdbe) 
 	
 .SYNOPSIS
@@ -24,7 +26,8 @@
 	## Features:
 
 	- Does not require administrator permission.
-	- Works even if windows is locked. Also works if logged out or never logged in (if you start it at system start via task scheduler).
+	- Works even if windows is locked. 
+	- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to read your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
 	- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
@@ -201,10 +204,10 @@
   (default: @("E", "F"))
   
 .PARAMETER Settings_File_Windows_Idle_Control_Keeper_txt
-  These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. (default: "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
+  These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. The path should be accessible by all users. (default: "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
   
 .PARAMETER PycawAudioCheckerPath
-  Full path to the Python script used to detect audio playback with custom threshold.  
+  Full path to the Python script used to detect audio playback with custom threshold. The path should be accessible by all users.
   (default: "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
 
 .PARAMETER PythonPath
@@ -212,12 +215,16 @@
   (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
 
 .PARAMETER PauseFlagPath
-  Path to a flag file. If this file exists, the script pauses monitoring and skips sleep.  
-  Allows manual pause/resume by creating/deleting the file.
+  If this file exists, the script pauses monitoring and skips sleep.  
+  Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users.
   (default: "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
 
+.PARAMETER MutualExclusionFlagFile
+  This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance checks the date of this flag file and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is run 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log in script will message the old script(s) to exit.
+  (default: "C:\Commands_And_Logs\.WickMutualExclusionFlag")
+
 .PARAMETER LogPath
-  Full path to the log file. (default: "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
+  Full path to the log file. The path should be accessible by all users. (default: "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
 
 .PARAMETER LogMaxAgeDays
   Keep logs this many days. (default: 30)
@@ -238,7 +245,7 @@
   How often to sample system metrics. (default: 1)
   
 .PARAMETER SettingsPollIntervalMinutes
-  Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
+  Value should be lower than your e.g. sleep time (and in some sort of tandem with `FileSettingsPollIntervalMinutes`). Dynamically updates various script settings and timers, including checking the MutualExclusionFlagFile, or settings from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
   
 .PARAMETER FileSettingsPollIntervalMinutes
   Dynamically reads parameters from your settings file (should run at same interval as SettingsPollIntervalMinutes, unless you're not using it (0 means not used)). You can also use decimals e.g. '0.3' min. (default: 1)
@@ -276,6 +283,7 @@ param(
     [string]$PycawAudioCheckerPath,
     [string]$PythonPath,
     [string]$PauseFlagPath,
+    [string]$MutualExclusionFlagFile,
     [string]$LogPath,
     [int]$LogMaxAgeDays,
     [int]$LogMaxSizeMB,
@@ -313,6 +321,7 @@ $script:Config = @{
     PycawAudioCheckerPath                       			= "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
     PythonPath                                  			= "$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
     PauseFlagPath                               			= "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
+    MutualExclusionFlagFile                        			= "C:\Commands_And_Logs\.WickMutualExclusionFlag"
     LogPath                                     			= "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log"
     LogMaxAgeDays                               			= 30
     LogMaxSizeMB                                			= 10
@@ -1244,10 +1253,70 @@ function Show-AbortDialog {
     return $result -eq 6
 }
 
+# --- Makes sure only one instance of this script runs at a time. Read the MutualExclusionFlagFile param description for why. ---
+
+function Create-MutualExclusionFlagFile {
+    <#
+    .SYNOPSIS
+        Creates or "touches" a mutual exclusion flag file.
+    .DESCRIPTION
+        If the file exists, updates its LastWriteTime to the current moment.
+        If it doesn't exist, creates it. If parent directory doesn't exist, throws error.
+    #>
+    param()
+
+    if (Test-Path -LiteralPath $script:Config['MutualExclusionFlagFile']) {
+        # Touch: Update LastWriteTime without opening the file
+        [IO.File]::SetLastWriteTime($script:Config['MutualExclusionFlagFile'], [DateTime]::Now)
+    } else {
+        # Create parent directory if missing
+        $parentDir = Split-Path -Path $script:Config['MutualExclusionFlagFile'] -Parent
+        if (-not (Test-Path -LiteralPath $parentDir)) {
+            #New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+			Write-Log "ERROR: You need to set a valid directory for the MutualExclusionFlagFile. Otherwise the script will allow multiple instances of itself to be active at the same time, and you can't do the system task + user task trick." "ERROR"
+        }
+        # Create empty file
+        New-Item -ItemType File -Path $script:Config['MutualExclusionFlagFile'] -Force -ErrorAction Stop | Out-Null
+    }
+}
+
+function Touched-MutualExclusionFlagFile {
+    <#
+    .SYNOPSIS
+        Checks if the flag file was modified more than the poll interval after script start.
+    .DESCRIPTION
+        Returns $true if LastWriteTime > (ScriptStartTime + SettingsPollIntervalMinutes),
+        else returns $false. Handles missing files gracefully.
+    #>
+    [CmdletBinding()]
+    param()
+	
+    $flagPath = $script:Config['MutualExclusionFlagFile']
+    $pollMinutes = $script:Config['SettingsPollIntervalMinutes']
+
+    # Fallback if StartTime wasn't explicitly captured at load
+    $scriptStart = $script:StartTime
+
+    if (-not (Test-Path -LiteralPath $flagPath)) {
+		Write-Log "Warning: Could not find MutualExclusionFlagFile. Without this file, the script will allow multiple instances of itself to be active at the same time, and you can't do the system task + user task trick." "WARN"
+        return $false
+    }
+	
+    $lastModified = (Get-Item -LiteralPath $flagPath).LastWriteTime
+    $threshold = $scriptStart.AddMinutes($pollMinutes)
+	
+    # Returns $true if MutualExclusionFlagFile was modified AFTER (ScriptStart + PollInterval)
+    return $lastModified -gt $threshold
+}
+
 # --- Main Sequence ---
-Write-Log "~*------- W.I.C.K. started. -------"
-Write-Log "Log path: $($script:Config['LogPath'])"
-Write-Log "Log path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])"
+Write-Log "~*------- W.I.C.K. started. ---------" "INFO"
+Write-Log "Log path: $($script:Config['LogPath'])" "INFO"
+Write-Log "Log path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])" "INFO"
+
+$script:StartTime = Get-Date
+# Create or touch the mutex file so any other running wick scripts will find out that they should exit.
+Create-MutualExclusionFlagFile
 
 if ($script:Config['FileSettingsPollIntervalMinutes'] -ne 0.0) {
 	Update-ConfigFromSettingsFile
@@ -1400,6 +1469,13 @@ try {
 		# Poll power plan timeout every $script:Config['SettingsPollIntervalMinutes'] updates
 		$script:g_nextSettingsPollSeconds = $script:g_nextSettingsPollSeconds - $deltaTimeSeconds
 		if ($script:g_nextSettingsPollSeconds -le 0) {
+			# exit this script if a new script was started on this computer.
+			$touchResult = Touched-MutualExclusionFlagFile
+			if($touchResult -eq $true) {
+				Write-Log "~~~~~~~~~ Exiting this WICK script we started at $script:StartTime because somebody else (hopefully another WICK script) touched the MutualExclusionFlagFile since then). ~~~~~~~*-" "INFO"
+				break;
+			}
+			
 			# Sliding windows for sustained detection
 			if($script:g_maxSamples -ne $script:Config['ActivityDetectionPeriodSeconds']) {
 				Write-Log "ActivityDetectionPeriodSeconds changed: $script:g_maxSamples to $($script:Config['ActivityDetectionPeriodSeconds'])." "INFO"
@@ -1784,4 +1860,6 @@ try {
 	if ($script:g_isIdle -eq $true) {
 		LogSystemEvent_IdleOff
 	}
+	
+	Write-Log "~~~~~~~~~ Exited the WICK script started at $script:StartTime ~~~~~~~*-" "INFO"
 }

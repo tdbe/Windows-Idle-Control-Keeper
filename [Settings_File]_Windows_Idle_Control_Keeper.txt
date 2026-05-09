@@ -88,11 +88,11 @@ DiskBlacklistDrives:@("E", "F")
 #~*--------------------------------------------------------------------------------------------------#
 
 Settings_File_Windows_Idle_Control_Keeper_txt:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
-#~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
+#~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. The path should be accessible by all users. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
 #~*--------------------------------------------------------------------------------------------------#
 
 PycawAudioCheckerPath:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
-#~*------------ Full path to the Python script used to detect audio playback with custom threshold. (default:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
+#~*------------ Full path to the Python script used to detect audio playback with custom threshold. The path should be accessible by all users. (default:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
 #~*--------------------------------------------------------------------------------------------------#
 
 PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
@@ -100,11 +100,15 @@ PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
 #~*--------------------------------------------------------------------------------------------------#
 
 PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
-#~*------------ Path to a flag file. If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. (default:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+#~*------------ If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users. (default:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+#~*--------------------------------------------------------------------------------------------------#
+
+MutualExclusionFlagFile:"C:\Commands_And_Logs\.WickMutualExclusionFlag"
+#~*------------ This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance checks the date of this flag file and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is run 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log in script will message the old script(s) to exit. (default: "C:\Commands_And_Logs\.WickMutualExclusionFlag")
 #~*--------------------------------------------------------------------------------------------------#
 
 LogPath:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log"
-#~*------------ Full path to the log file. (default:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
+#~*------------ Full path to the log file. The path should be accessible by all users. (default:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log")
 #~*--------------------------------------------------------------------------------------------------#
 
 LogMaxAgeDays:30 
@@ -132,7 +136,7 @@ SampleIntervalSec:1
 #~*--------------------------------------------------------------------------------------------------#
 
 SettingsPollIntervalMinutes:1 
-#~*------------ Dynamically reads from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
+#~*------------ Value should be lower than your e.g. sleep time (and in some sort of tandem with `FileSettingsPollIntervalMinutes`). Dynamically updates various script settings and timers, including checking the MutualExclusionFlagFile, or settings from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
 #~*--------------------------------------------------------------------------------------------------#
 
 FileSettingsPollIntervalMinutes:1
