@@ -211,8 +211,8 @@
   (default: "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
 
 .PARAMETER PythonPath
-  Full path to the Python executable used to run the audio checker script.
-  (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
+  Full path to the Python executable used to run the audio checker script. It detects the latest version on its own if you use that wildcard.
+  (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe")
 
 .PARAMETER PauseFlagPath
   If this file exists, the script pauses monitoring and skips sleep.  
@@ -1205,12 +1205,64 @@ function Get-MouseMovementPixels {
     }
 }
 
+# --- browse the latest python version you have ---
+function Resolve-PythonPath {
+    <#
+    .SYNOPSIS
+        Dynamically resolves Python path by scanning for the latest installed version.
+    .DESCRIPTION
+        Supports placeholder Python{VERSION} in config. Scans parent dir, 
+        sorts directories numerically, and returns the path to the newest python.exe.
+    #>
+    [CmdletBinding()]
+    param([string]$PathPattern)
+
+    if ([string]::IsNullOrWhiteSpace($PathPattern)) { return $PathPattern }
+
+    # Expand environment variables ($env:USERPROFILE -> C:\Users\...)
+    $resolved = [Environment]::ExpandEnvironmentVariables($PathPattern)
+
+    # Check if placeholder exists
+    $placeholderIndex = $resolved.IndexOf('Python{VERSION}')
+    if ($placeholderIndex -eq -1) { 
+        Write-Verbose "No {VERSION} placeholder found. Using path as-is: $resolved"
+        return $resolved 
+    }
+
+    # Extract base directory
+    $basePath = $resolved.Substring(0, $placeholderIndex).TrimEnd('\')
+
+    if (-not (Test-Path -LiteralPath $basePath)) {
+        Write-Warning "Python base directory not found: $basePath"
+        return $resolved
+    }
+
+    # Find all Python* folders
+    $pyDirs = Get-ChildItem -LiteralPath $basePath -Directory -Filter 'Python*' -ErrorAction SilentlyContinue
+    if ($pyDirs.Count -eq 0) {
+        Write-Warning "No Python directories found in: $basePath"
+        return $resolved
+    }
+
+    # 🔑 Sort numerically (Python313 > Python312 > Python39)
+    $latest = $pyDirs | 
+              Sort-Object { [long]($_.Name -replace '[^0-9]', '') } -Descending | 
+              Select-Object -First 1
+
+    # Build resolved path
+    $finalPath = "$basePath\$($latest.Name)\python.exe"
+    Write-Verbose "Resolved Python path: $finalPath"
+    return $finalPath
+}
+
+$currentPythonPath = Resolve-PythonPath -PathPattern $script:Config['PythonPath']
+
 # --- Sound: Detects if any audio is playing ---
 function Get-AudioIsPlaying {
     if (-not [System.Environment]::UserInteractive) { return $false }
 
     # Capture stdout only, force case-insensitive comparison, guarantee boolean
-	$pythonExe = $script:Config['PythonPath']
+	$pythonExe = $currentPythonPath #$script:Config['PythonPath']
 	$pyScript  = $script:Config['PycawAudioCheckerPath']
 	$rawOutput = & "$pythonExe" "$pyScript" 2>$null | ForEach-Object { $_.Trim().ToLower() }
 	$isPlaying = $rawOutput -eq 'true'
@@ -1581,6 +1633,9 @@ try {
 					}
 				}
 			}
+			
+			# check maybe the user updated python in the meantime (this script is meant to run pretty much constantly)
+			$currentPythonPath = Resolve-PythonPath -PathPattern $script:Config['PythonPath']
 			
 			$script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 		}

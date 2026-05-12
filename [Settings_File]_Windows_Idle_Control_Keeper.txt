@@ -95,8 +95,8 @@ PycawAudioCheckerPath:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
 #~*------------ Full path to the Python script used to detect audio playback with custom threshold. The path should be accessible by all users. (default:"C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py")
 #~*--------------------------------------------------------------------------------------------------#
 
-PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe"
-#~*------------ Full path to the Python executable used to run the audio checker script. (default:"$env:USERPROFILE\AppData\Local\Programs\Python\Python312\python.exe")
+PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe"
+#~*------------ Full path to the Python executable used to run the audio checker script. It detects the python version on its own if you use that wildcard. (default:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe")
 #~*--------------------------------------------------------------------------------------------------#
 
 PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
