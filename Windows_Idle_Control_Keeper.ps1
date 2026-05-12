@@ -173,7 +173,10 @@
   
 .PARAMETER TurnOffDisplayAtThisIdleTimeMinutes
   If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. Zero means it doesn't trigger (or the system power setting is used). You can also use decimals e.g. '0.3' min. (default: 0) 
-   
+
+.PARAMETER LockPcAtThisIdleTimeMinutes 
+  If not zero ((and after the FailsafeTimeMinutes (which is active on startup or on resume from sleep)) it will lock pc at this idle time, which you can set to be earlier than whenever Windows decides to lock. You can also use decimals e.g. '0.3' min. (default: 0)  
+  
 .PARAMETER CpuThresholdPercent
   CPU usage above this resets idle timer. (default: 7)
 
@@ -191,9 +194,6 @@
 
 .PARAMETER ActivityDetectionPeriodSamplesAudio
   Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
-
-.PARAMETER LockPcAtThisIdleTimeMinutes 
-  If not zero ((and due to failsafe) actually if greater than FailsafeTimeMinutes) will lock pc at this idle time, which can be earlier than when Windows decides to do it. You can also use decimals e.g. '0.3' min. (default: 0)
 
 .PARAMETER IdleSecondsBeforeWeBroadcastSystemIdleEvent
   How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Application Log (regardless of when the display is turned off or screensaver turns on or anything else). (default: 60)
@@ -240,9 +240,6 @@
 
 .PARAMETER SleepAbortWindowCountdownSeconds
   Seconds to show the sleep abort dialog before triggering sleep. (default: 60)
-
-.PARAMETER SampleIntervalSec
-  How often to sample system metrics. (default: 1)
   
 .PARAMETER SettingsPollIntervalMinutes
   Value should be lower than your e.g. sleep time (and in some sort of tandem with `FileSettingsPollIntervalMinutes`). Dynamically updates various script settings and timers, including checking the MutualExclusionFlagFile, or settings from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
@@ -251,7 +248,7 @@
   Dynamically reads parameters from your settings file (should run at same interval as SettingsPollIntervalMinutes, unless you're not using it (0 means not used)). You can also use decimals e.g. '0.3' min. (default: 1)
   
 .PARAMETER FailsafeTimeMinutes
-  I use a failsafe time in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task schedule. (default: 0.98)
+  When the script starts or when it resumes from sleep, I use this failsafe timer, in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get e.g. 60 seconds to stop it even if you set it to run hidden on system startup from task scheduler. (default: 0.98)
 #>
 
 # Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
@@ -290,7 +287,6 @@ param(
     [int]$LogToFileIntervalSeconds,
     [bool]$LogToConsoleVerbose,
     [int]$SleepAbortWindowCountdownSeconds,
-    [int]$SampleIntervalSec,
     [int]$SettingsPollIntervalMinutes,
     [int]$FileSettingsPollIntervalMinutes,
     [int]$FailsafeTimeMinutes
@@ -328,7 +324,6 @@ $script:Config = @{
     LogToFileIntervalSeconds                    			= 60
     LogToConsoleVerbose                         			= $true
     SleepAbortWindowCountdownSeconds            			= 60
-    SampleIntervalSec                           			= 1
     SettingsPollIntervalMinutes                 			= 1
     FileSettingsPollIntervalMinutes                 		= 1
     FailsafeTimeMinutes                         			= 0.98
@@ -1285,14 +1280,15 @@ function Touched-MutualExclusionFlagFile {
     .SYNOPSIS
         Checks if the flag file was modified more than the poll interval after script start.
     .DESCRIPTION
-        Returns $true if LastWriteTime > (ScriptStartTime + SettingsPollIntervalMinutes),
+        Returns $true if LastWriteTime > (ScriptStartTime + threshold),
         else returns $false. Handles missing files gracefully.
     #>
     [CmdletBinding()]
     param()
 	
     $flagPath = $script:Config['MutualExclusionFlagFile']
-    $pollMinutes = $script:Config['SettingsPollIntervalMinutes']
+    # $pollMinutes = $script:Config['SettingsPollIntervalMinutes']
+	$thresholdSec = 4
 
     # Fallback if StartTime wasn't explicitly captured at load
     $scriptStart = $script:StartTime
@@ -1303,9 +1299,10 @@ function Touched-MutualExclusionFlagFile {
     }
 	
     $lastModified = (Get-Item -LiteralPath $flagPath).LastWriteTime
-    $threshold = $scriptStart.AddMinutes($pollMinutes)
+    #$threshold = $scriptStart.AddMinutes($pollMinutes)
+    $threshold = $scriptStart.AddSeconds($thresholdSec)
 	
-    # Returns $true if MutualExclusionFlagFile was modified AFTER (ScriptStart + PollInterval)
+    # Returns $true if MutualExclusionFlagFile was modified AFTER (ScriptStart + threshold)
     return $lastModified -gt $threshold
 }
 
