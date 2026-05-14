@@ -1,6 +1,4 @@
 <#
-.SYNOPSIS
-
 	MIT License, Copyright (c) 2026 Tudor Berechet [tdbe](https://github.com/tdbe) 
 	
 .SYNOPSIS
@@ -27,7 +25,7 @@
 
 	- Does not require administrator permission.
 	- Works even if windows is locked. 
-	- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to read your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
+	- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to monitor your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
 	- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
@@ -36,7 +34,7 @@
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 	- Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
-	- Logs what's going on, to Windows' Event Viewer - Application Log (1. idle_on ('69') (after 1m of idle), 2. idle_off ('70')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
+	- Logs what's going on, to Windows' Event Viewer - Application Log (0. on start ('69' '1111'), 1. idle_on ('69' '420') (after 1m of idle), 2. idle_off ('69' '421'), 3. on exit ('69' '1000')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
 	## Dependencies:
@@ -144,7 +142,21 @@
 	-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
 	```
 	
-	#### PS:
+	### Alternative in case window is not hidden
+	
+	#### Program/script: 
+
+	```
+	C:\Windows\System32\conhost.exe
+	```
+	
+	#### Add arguments (no window, runs in background completely hidden):
+
+	```
+	--headless powershell -WindowStyle hidden -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:/Commands_And_Logs/windows_idle_control_keeper.ps1" -FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan:$true -UserSpecifiedSleepIdleTimeMinutes:30 -PreventAndReplaceWindowsAutoSleep:$true -IgnoreTheSettingsFile:$true # other flags -etc. -etc.
+	```
+	
+	### PS:
 	
 	Instead of regular params, I added $script:Config that loads from either the params ($PSBoundParameters) or the Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause or tweak settings while the script is running (every FileSettingsPollIntervalMinutes).
 	
@@ -175,16 +187,16 @@
   If nonzero, overrides itself even if the FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan == $true. Zero means it doesn't trigger (or the system power setting is used). You can also use decimals e.g. '0.3' min. (default: 0) 
 
 .PARAMETER LockPcAtThisIdleTimeMinutes 
-  If not zero ((and after the FailsafeTimeMinutes (which is active on startup or on resume from sleep)) it will lock pc at this idle time, which you can set to be earlier than whenever Windows decides to lock. You can also use decimals e.g. '0.3' min. (default: 0)  
-  
+  If not zero ((and after the FailsafeTimeMinutes (which is active on startup or on resume from sleep)) it will lock pc at this idle time, which you can set to be earlier than whenever Windows decides to lock. You can also use decimals e.g. '0.3' min. (default: 0)
+
 .PARAMETER CpuThresholdPercent
   CPU usage above this resets idle timer. (default: 7)
 
 .PARAMETER DiskThresholdKBps
-  Disk I/O (KB/s) above this resets idle timer. (default: 1250)
+  Disk I/O (KB/s) above this resets idle timer. Sums (read + write) * all the disks except the DiskBlacklistDrives. It also detects any ongoing volume shadowcopy service activity e.g. if you're doing a backup. (default: 1250)
 
 .PARAMETER NetworkThresholdKBps
-  Network I/O (KB/s) above this resets idle timer. (default: 850)
+  Network I/O (KB/s) above this resets idle timer. Sums (download + upload) * all the non-virtual network interfaces. (default: 850)
 
 .PARAMETER ActiveSamplesWithinInterval
   How many instances (seconds, but there can be lag) of activity must be detected within the last ActivityDetectionPeriodSeconds seconds for us to consider that activity an idle breaker. (default: 3)
@@ -220,7 +232,7 @@
   (default: "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
 
 .PARAMETER MutualExclusionFlagFile
-  This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance checks the date of this flag file and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is run 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log in script will message the old script(s) to exit.
+  This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance sees the new PID in this flag file, and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is start 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log-in task script will cause the old script(s) to exit.
   (default: "C:\Commands_And_Logs\.WickMutualExclusionFlag")
 
 .PARAMETER LogPath
@@ -475,6 +487,7 @@ $script:g_PreventSleep_ES = $false
 $script:g_myUnixTimeEpochStart = Get-Date '2026-01-01'
 $script:g_minutesPassedLastFrame = 0
 
+$script:StartTime = Get-Date
 
 # --- Logging Setup ---
 # logs to Windows > Event Viewer > Windows Logs > Application. It will have the date and time of the event. These can be queried by scripts.
@@ -489,7 +502,7 @@ function LogSystemEvent_IdleOn {
 	$Category  = 69
     $EventId   = 420
     $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
-    $Message   = "[WICK: IDLE] System is idle according to the Windows_Idle_Control_Keeper.ps1. (IdleSecondsBeforeWeBroadcastSystemIdleEvent: $script:Config['IdleSecondsBeforeWeBroadcastSystemIdleEvent'].)"
+    $Message   = "[WICK: IDLE] System is idle according to the Windows_Idle_Control_Keeper.ps1. PID: $PID (IdleSecondsBeforeWeBroadcastSystemIdleEvent: $script:Config['IdleSecondsBeforeWeBroadcastSystemIdleEvent'].)"
 
     Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
 }
@@ -503,10 +516,42 @@ function LogSystemEvent_IdleOff {
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
-    $Category  = 70
+    $Category  = 69
     $EventId   = 421
     $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
-    $Message   = "[WICK: NOT Idle] System stopped being idle according to the Windows_Idle_Control_Keeper.ps1"
+    $Message   = "[WICK: NOT Idle] System stopped being idle according to the Windows_Idle_Control_Keeper.ps1. PID: $PID"
+
+    Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
+}
+
+function LogSystemEvent_OnStart {
+    [CmdletBinding()]
+    param()
+	
+	$script:g_isIdle = $true
+
+    $LogName   = "Application" # writing to the "System" log requires admin privileges
+    $Source    = "Application" # writing to your new custom source e.g. "wick_on" requires admin privileges
+	$Category  = 69
+    $EventId   = 1111
+    $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
+    $Message   = "[WICK: STARTED] The Windows_Idle_Control_Keeper.ps1 was started at $script:StartTime. PID: $PID"
+
+    Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
+}
+
+function LogSystemEvent_OnEnd {
+    [CmdletBinding()]
+    param()
+	
+	$script:g_isIdle = $true
+
+    $LogName   = "Application" # writing to the "System" log requires admin privileges
+    $Source    = "Application" # writing to your new custom source e.g. "wick_off" requires admin privileges
+	$Category  = 69
+    $EventId   = 1000
+    $EntryType = [System.Diagnostics.EventLogEntryType]::Warning # or Information
+    $Message   = "[WICK: ENDED] The Windows_Idle_Control_Keeper.ps1 that started at $script:StartTime has ended. PID: $PID"
 
     Write-EventLog -LogName $LogName -Source $Source -EventId $EventId -EntryType $EntryType -Message $Message -Category $Category
 }
@@ -1302,70 +1347,64 @@ function Show-AbortDialog {
 
 # --- Makes sure only one instance of this script runs at a time. Read the MutualExclusionFlagFile param description for why. ---
 
-function Create-MutualExclusionFlagFile {
+function CreateOrUpdate-MutualExclusionFlagFile {
     <#
     .SYNOPSIS
-        Creates or "touches" a mutual exclusion flag file.
-    .DESCRIPTION
-        If the file exists, updates its LastWriteTime to the current moment.
-        If it doesn't exist, creates it. If parent directory doesn't exist, throws error.
-    #>
-    param()
-
-    if (Test-Path -LiteralPath $script:Config['MutualExclusionFlagFile']) {
-        # Touch: Update LastWriteTime without opening the file
-        [IO.File]::SetLastWriteTime($script:Config['MutualExclusionFlagFile'], [DateTime]::Now)
-    } else {
-        # Create parent directory if missing
-        $parentDir = Split-Path -Path $script:Config['MutualExclusionFlagFile'] -Parent
-        if (-not (Test-Path -LiteralPath $parentDir)) {
-            #New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
-			Write-Log "ERROR: You need to set a valid directory for the MutualExclusionFlagFile. Otherwise the script will allow multiple instances of itself to be active at the same time, and you can't do the system task + user task trick." "ERROR"
-        }
-        # Create empty file
-        New-Item -ItemType File -Path $script:Config['MutualExclusionFlagFile'] -Force -ErrorAction Stop | Out-Null
-    }
-}
-
-function Touched-MutualExclusionFlagFile {
-    <#
-    .SYNOPSIS
-        Checks if the flag file was modified more than the poll interval after script start.
-    .DESCRIPTION
-        Returns $true if LastWriteTime > (ScriptStartTime + threshold),
-        else returns $false. Handles missing files gracefully.
+        Atomically overwrites the mutual exclusion flag with the current process PID.
     #>
     [CmdletBinding()]
     param()
-	
-    $flagPath = $script:Config['MutualExclusionFlagFile']
-    # $pollMinutes = $script:Config['SettingsPollIntervalMinutes']
-	$thresholdSec = 4
 
-    # Fallback if StartTime wasn't explicitly captured at load
-    $scriptStart = $script:StartTime
+    $filePath = $script:Config['MutualExclusionFlagFile']
+    $parentDir = Split-Path -Path $filePath -Parent
 
-    if (-not (Test-Path -LiteralPath $flagPath)) {
-		Write-Log "Warning: Could not find MutualExclusionFlagFile. Without this file, the script will allow multiple instances of itself to be active at the same time, and you can't do the system task + user task trick." "WARN"
-        return $false
+    if (-not (Test-Path -LiteralPath $parentDir)) {
+		Write-Log "[CreateOrUpdate-MutualExclusionFlagFile] ERROR: Invalid directory for MutualExclusionFlagFile. Multiple instances may run concurrently. FilePath: $filePath" "ERROR"
+        return
     }
-	
-    $lastModified = (Get-Item -LiteralPath $flagPath).LastWriteTime
-    #$threshold = $scriptStart.AddMinutes($pollMinutes)
-    $threshold = $scriptStart.AddSeconds($thresholdSec)
-	
-    # Returns $true if MutualExclusionFlagFile was modified AFTER (ScriptStart + threshold)
-    return $lastModified -gt $threshold
+
+    # Atomic overwrite: completely replaces file contents with current PID
+    [System.IO.File]::WriteAllText($filePath, $PID.ToString(), [System.Text.Encoding]::UTF8)
+}
+
+# comparing file contents to $script:StartTime + $script:deltaTimeOfFlagTouch
+function WeOwn-MutualExclusionFlagFile {
+    <#
+    .SYNOPSIS
+        Checks if this script instance currently "owns" the mutual exclusion flag.
+    .DESCRIPTION
+        Returns $true if the PID in the file matches our PID.
+        Returns $false if another instance's PID is in the file.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $filePath = $script:Config['MutualExclusionFlagFile']
+    
+    if (-not (Test-Path -LiteralPath $filePath)) { 
+		Write-Log "[WeOwn-MutualExclusionFlagFile] no file found at path: $filePath" "ERROR"
+		return $true 
+	}
+
+    try {
+        $filePID = [int]::Parse([System.IO.File]::ReadAllText($filePath).Trim())
+        # If the file contains OUR PID, we own the flag and can proceed
+        return $filePID -eq $PID
+    }
+    catch {
+		Write-Log "[WeOwn-MutualExclusionFlagFile] Failed to parse MutualExclusionFlagFile: $_" "ERROR"
+        return $true
+    }
 }
 
 # --- Main Sequence ---
+LogSystemEvent_OnStart
+CreateOrUpdate-MutualExclusionFlagFile
+Write-Log " " "INFO"
 Write-Log "~*------- W.I.C.K. started. ---------" "INFO"
+Write-Log "~*------- PID: $PID ---------" "INFO"
 Write-Log "Log path: $($script:Config['LogPath'])" "INFO"
 Write-Log "Log path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])" "INFO"
-
-$script:StartTime = Get-Date
-# Create or touch the mutex file so any other running wick scripts will find out that they should exit.
-Create-MutualExclusionFlagFile
 
 if ($script:Config['FileSettingsPollIntervalMinutes'] -ne 0.0) {
 	Update-ConfigFromSettingsFile
@@ -1396,14 +1435,14 @@ if ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan']) {
 }
 
 if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
-	Write-Log "Because PreventAndReplaceWindowsAutoSleep: $($script:Config['PreventAndReplaceWindowsAutoSleep']), we need to manually trigger the display to turn off at the power plan's display setting time (and also lock), and also trigger the screensaver at its time if it exists:" "INFO"
+	Write-Log "Because PreventAndReplaceWindowsAutoSleep: $($script:Config['PreventAndReplaceWindowsAutoSleep']), we need to manually trigger the display to turn off at the power plan's display setting time (and also lock), and also trigger the screensaver at its time if it exists. Values below." "INFO"
 		
 	if ($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0) {
 		$script:g_DisplayTimeoutDurationMinutes = $script:Config['TurnOffDisplayAtThisIdleTimeMinutes']
 		Write-Log "Using user set display timeout: $($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'])" "INFO"
 	} else {
 		$script:g_DisplayTimeoutDurationMinutes = $(Get-DisplayTimeoutSeconds $script:g_isPluggedIn) / 60
-		Write-Log "You set to use windows power plan's g_DisplayTimeoutDurationMinutes: $($script:g_DisplayTimeoutDurationMinutes). We need this because Laptops will stop auto turning off their display if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalMinutes: $($script:Config['SettingsPollIntervalMinutes']) min.)" "INFO"
+		Write-Log "Using windows power plan's g_DisplayTimeoutDurationMinutes: $($script:g_DisplayTimeoutDurationMinutes). We need this because Laptops will stop auto turning off their display if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalMinutes: $($script:Config['SettingsPollIntervalMinutes']) min.)" "INFO"
 	}
 	
 	if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0) {
@@ -1411,7 +1450,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 		Write-Log "Using user set screensaver timeout: $($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'])" "INFO"
 	} else {
 		$script:g_ScreensaverTimeoutDurationMinutes = $(Get-ScreensaverTimeoutSeconds) / 60
-		Write-Log "You set to use windows power plan's g_ScreensaverTimeoutDurationMinutes: $($script:g_ScreensaverTimeoutDurationMinutes) (in case you use the screensaver). We need this because Laptops will stop auto turning on the screensaver if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalMinutes: $($script:Config['SettingsPollIntervalMinutes']) min.)" "INFO"
+		Write-Log "Using windows power plan's g_ScreensaverTimeoutDurationMinutes: $($script:g_ScreensaverTimeoutDurationMinutes) (in case you use the screensaver). We need this because Laptops will stop auto turning on the screensaver if you tell them to not sleep (by using SetThreadExecutionState ES_SYSTEM_REQUIRED). (We check to update this value every: SettingsPollIntervalMinutes: $($script:Config['SettingsPollIntervalMinutes']) min.)" "INFO"
 	}
 } elseif ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] -eq $false) {
 	if ($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0) {
@@ -1519,9 +1558,9 @@ try {
 		$script:g_nextSettingsPollSeconds = $script:g_nextSettingsPollSeconds - $deltaTimeSeconds
 		if ($script:g_nextSettingsPollSeconds -le 0) {
 			# exit this script if a new script was started on this computer.
-			$touchResult = Touched-MutualExclusionFlagFile
-			if($touchResult -eq $true) {
-				Write-Log "~~~~~~~~~ Exiting this WICK script we started at $script:StartTime because somebody else (hopefully another WICK script) touched the MutualExclusionFlagFile since then). ~~~~~~~*-" "INFO"
+			$weOwnMuttex = WeOwn-MutualExclusionFlagFile
+			if($weOwnMuttex -eq $false) {
+				Write-Log "~~~~~~~~~ Exiting this WICK script we started at $script:StartTime because somebody else (hopefully another WICK script) updated the PID in the MutualExclusionFlagFile since then). ~~~~~~~*-" "INFO"
 				break;
 			}
 			
@@ -1573,7 +1612,7 @@ try {
 						Write-Log "Updating user set display timeout: $($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'])" "INFO"
 					}
 				} else {
-					$newDisplayTimeoutDurationMinutes = Get-DisplayTimeoutSeconds $script:g_isPluggedIn
+					$newDisplayTimeoutDurationMinutes = $(Get-DisplayTimeoutSeconds $script:g_isPluggedIn) / 60
 					if($newDisplayTimeoutDurationMinutes -ne $script:g_DisplayTimeoutDurationMinutes) {
 						Write-Log "System g_DisplayTimeoutDurationMinutes changed: $script:g_DisplayTimeoutDurationMinutes to $newDisplayTimeoutDurationMinutes minutes." "INFO"
 						$script:g_DisplayTimeoutDurationMinutes = $newDisplayTimeoutDurationMinutes
@@ -1913,5 +1952,7 @@ try {
 		LogSystemEvent_IdleOff
 	}
 	
-	Write-Log "~~~~~~~~~ Exited the WICK script started at $script:StartTime ~~~~~~~*-" "INFO"
+	Write-Log "~~~~~~~~~ Exited the WICK script started at $script:StartTime PID: $PID ~~~~~~~*-" "INFO"
+	Write-Log " " "INFO"
+	LogSystemEvent_OnEnd
 }

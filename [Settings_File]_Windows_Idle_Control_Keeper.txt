@@ -60,11 +60,11 @@ CpuThresholdPercent:7
 #~*--------------------------------------------------------------------------------------------------#
 
 DiskThresholdKBps:1250 
-#~*------------ Disk I/O (KB/s) above this resets idle timer. (default: 1250)
+#~*------------ Disk I/O (KB/s) above this resets idle timer. Sums (read + write) * all the disks except the DiskBlacklistDrives. It also detects any ongoing volume shadowcopy service activity e.g. if you're doing a backup. (default: 1250)
 #~*--------------------------------------------------------------------------------------------------#
 
 NetworkThresholdKBps:850 
-#~*------------ Network I/O (KB/s) above this resets idle timer. (default: 850)
+#~*------------ Network I/O (KB/s) above this resets idle timer. Sums (download + upload) * all the non-virtual network interfaces. (default: 850)
 #~*--------------------------------------------------------------------------------------------------#
 
 ActiveSamplesWithinInterval:3 
@@ -104,7 +104,7 @@ PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_
 #~*--------------------------------------------------------------------------------------------------#
 
 MutualExclusionFlagFile:"C:\Commands_And_Logs\.WickMutualExclusionFlag"
-#~*------------ This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance checks the date of this flag file and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is run 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log in script will message the old script(s) to exit. (default: "C:\Commands_And_Logs\.WickMutualExclusionFlag")
+#~*------------ This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance sees the new PID in this flag file, and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is start 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log-in task script will cause the old script(s) to exit. (default: "C:\Commands_And_Logs\.WickMutualExclusionFlag")
 #~*--------------------------------------------------------------------------------------------------#
 
 LogPath:"C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log"
