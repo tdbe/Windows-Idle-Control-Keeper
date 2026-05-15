@@ -100,7 +100,7 @@ PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\pytho
 #~*--------------------------------------------------------------------------------------------------#
 
 PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
-#~*------------ If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users. (default:"C:\Command_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+#~*------------ If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users. (default:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
 #~*--------------------------------------------------------------------------------------------------#
 
 MutualExclusionFlagFile:"C:\Commands_And_Logs\.WickMutualExclusionFlag"
