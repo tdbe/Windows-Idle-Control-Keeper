@@ -33,7 +33,7 @@
 	- Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
-	- Can also prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
+	- Can also prevent sleep or hibernate while a file or folder exists (e.g. "D:\Bak" or "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (File checked every FileSettingsPollIntervalMinutes) (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
 	- Logs what's going on, to Windows' Event Viewer - Application Log (0. on start ('69' '1111'), 1. idle_on ('69' '420') (after 1m of idle), 2. idle_off ('69' '421'), 3. on exit ('69' '1000')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
@@ -227,7 +227,7 @@
   (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe")
 
 .PARAMETER DontSleepWhileThisFileExistsPath
-  You can prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
+  You can prevent sleep or hibernate while a file (or directory) path exists (e.g. "D:\Bak" or "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (File checked every FileSettingsPollIntervalMinutes) (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
   (default: "D:\Bak\myLongSlowBackup.tmp")
 
 .PARAMETER MutualExclusionFlagFile
@@ -1502,6 +1502,11 @@ $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamp
 
 $script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
+$script:sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
+$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
+if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
+	Write-Log "We won't sleep or hibernate, because of the DontSleepWhileThisFileExistsPath flag file ($flagFile)" "INFO"
+} 
 
 if ($script:Config['PauseScript'] -eq $true) {
 	Write-Log "Script pause flag is present - while loop running but skipping until flag removed or renamed." "INFO"
@@ -1554,6 +1559,16 @@ try {
 		if ($script:g_nextFileSettingsPollSeconds -le 0 -and $script:Config['FileSettingsPollIntervalMinutes'] -ne 0.0) {
 			Update-ConfigFromSettingsFile
 			$script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
+			
+			$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
+			$dsfexists = Test-Path $flagFile
+			if ($script:sleepOrHibernatePreventionFlagExists -ne $dsfexists) {
+				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $script:sleepOrHibernatePreventionFlagExists to $dsfexists" "INFO"
+			}
+			if($dsfexists -eq $true) {
+				Write-Log "We won't sleep or hibernate, because of this prevention file or folder $flagFile" "INFO"
+			} 
+			$script:sleepOrHibernatePreventionFlagExists = $dsfexists
 		}
 		
 		# Poll power plan timeout every $script:Config['SettingsPollIntervalMinutes'] updates
@@ -1885,8 +1900,7 @@ try {
 			#if ($RespectOtherAppsSleepExecutionPreventionFlags -eq $false -or (Test-OtherSystemExecutionStateHeld -eq $false -and $RespectOtherAppsSleepExecutionPreventionFlags -eq $true)) {
 				# Check if ready to sleep
 				if ($script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
-					$sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
-					if($sleepOrHibernatePreventionFlagExists -eq $false) {
+					if($script:sleepOrHibernatePreventionFlagExists -eq $false) {
 						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "sleep"
 
 						if ($abort) {
@@ -1913,8 +1927,7 @@ try {
 				}
 				# Check if ready to hibernate
 				if ($script:g_idleSeconds -ge ($script:g_CurrentHibernateIdleTimeMinutes * 60)) {
-					$sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
-					if($sleepOrHibernatePreventionFlagExists -eq $false) {
+					if($script:sleepOrHibernatePreventionFlagExists -eq $false) {
 						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "hibernate"
 
 						if ($abort) {

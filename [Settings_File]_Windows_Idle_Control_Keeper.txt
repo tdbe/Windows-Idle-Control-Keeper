@@ -100,7 +100,7 @@ PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\pytho
 #~*--------------------------------------------------------------------------------------------------#
 
 DontSleepWhileThisFileExistsPath:"D:\Bak\myLongSlowBackup.tmp"
-#~*------------ You can prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users. (default: "D:\Bak\myLongSlowBackup.tmp")
+#~*------------ You can prevent sleep or hibernate while a file (or directory) path exists (e.g. "D:\Bak" or "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (File checked every FileSettingsPollIntervalMinutes) (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users. (default: "D:\Bak\myLongSlowBackup.tmp")
 #~*--------------------------------------------------------------------------------------------------#
 
 MutualExclusionFlagFile:"C:\Commands_And_Logs\.WickMutualExclusionFlag"
