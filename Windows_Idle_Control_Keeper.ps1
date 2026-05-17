@@ -33,7 +33,7 @@
 	- Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
-	- Can also be paused while running, by creating a (empty) `.ignore_running_Windows_Idle_Control_Keeper_script` flag file.
+	- Can also prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
 	- Logs what's going on, to Windows' Event Viewer - Application Log (0. on start ('69' '1111'), 1. idle_on ('69' '420') (after 1m of idle), 2. idle_off ('69' '421'), 3. on exit ('69' '1000')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
 	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
 
@@ -226,10 +226,9 @@
   Full path to the Python executable used to run the audio checker script. It detects the latest version on its own if you use that wildcard.
   (default: "$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe")
 
-.PARAMETER PauseFlagPath
-  If this file exists, the script pauses monitoring and skips sleep.  
-  Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users.
-  (default: "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+.PARAMETER DontSleepWhileThisFileExistsPath
+  You can prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
+  (default: "D:\Bak\myLongSlowBackup.tmp")
 
 .PARAMETER MutualExclusionFlagFile
   This flag file is created by the script on start. The path should be accessible by all users. It's used to make sure that if you start a new instance of this script, the old instance sees the new PID in this flag file, and exits. This is important also if you need to run the script before any user is logged in: if you "run whether the user is logged in or not" then the task scheduler makes the script always run under the SYSTEM account - which means it will only get the hidden system user's power plan settings for display and sleep etc. What you can do is start 2 tasks: 1 as system at startup, and 1 on user log in (log in, not unlock). The newer log-in task script will cause the old script(s) to exit.
@@ -291,7 +290,7 @@ param(
     [string]$Settings_File_Windows_Idle_Control_Keeper_txt,
     [string]$PycawAudioCheckerPath,
     [string]$PythonPath,
-    [string]$PauseFlagPath,
+    [string]$DontSleepWhileThisFileExistsPath,
     [string]$MutualExclusionFlagFile,
     [string]$LogPath,
     [int]$LogMaxAgeDays,
@@ -328,7 +327,7 @@ $script:Config = @{
     Settings_File_Windows_Idle_Control_Keeper_txt 			= "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
     PycawAudioCheckerPath                       			= "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
     PythonPath                                  			= "$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe"
-    PauseFlagPath                               			= "C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
+    DontSleepWhileThisFileExistsPath                        = "D:\Bak\myLongSlowBackup.tmp"
     MutualExclusionFlagFile                        			= "C:\Commands_And_Logs\.WickMutualExclusionFlag"
     LogPath                                     			= "C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log"
     LogMaxAgeDays                               			= 30
@@ -392,7 +391,7 @@ function Update-ConfigFromSettingsFile {
 		return 
 	}
 	
-	Write-Log "||||~~~~ Updating config settings from file: $Path"
+	Write-Log "||||~~~~ Checking config settings from file: $Path"
 	if ($script:Config['IgnoreTheSettingsFile'] -eq $true) {
 		Write-Log "Skipping loading most settings from file because it's set to be overwritten by the CLI param version, because -IgnoreTheSettingsFile:$true"
 	} 
@@ -453,9 +452,12 @@ function Update-ConfigFromSettingsFile {
 					
 					#if ($script:Config['IgnoreTheSettingsFile'] -eq $true) {
 					#	Write-Host "Skipping loading: $key ($val) from file because it's set to be overwritten by the CLI param version: $cliVersion"
-					#} 
+					#}
 					
-					if ($script:Config[$key] -ne $val -and $script:Config['IgnoreTheSettingsFile'] -eq $false -or $key -eq 'PauseScript') {
+					$val1Str = [string]$script:Config[$key]
+					$val2Str = [string]$val
+					
+					if ($val1Str -ne $val2Str -and ($script:Config['IgnoreTheSettingsFile'] -eq $false -or $key -eq 'PauseScript')) {
 						Write-Log "||||>>~~~~>> Updated config from file: '$key': from $($script:Config[$key]) to $val"
 						$script:Config[$key] = $val
 					}
@@ -579,7 +581,7 @@ function Write-Log {
     if (-not $script:Config['LogPath']) { return }
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "[$timestamp] [$Level] $Message"
+    $logEntry = "[$timestamp][PID: $PID] [$Level] $Message"
 
 	if($logEntry -eq "WARN") {
 		Write-Warning "$logEntry"
@@ -1501,7 +1503,7 @@ $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamp
 $script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
 
-if ((Test-Path $script:Config['PauseFlagPath']) -eq $true -or $script:Config['PauseScript'] -eq $true) {
+if ($script:Config['PauseScript'] -eq $true) {
 	Write-Log "Script pause flag is present - while loop running but skipping until flag removed or renamed." "INFO"
 }
 
@@ -1560,7 +1562,7 @@ try {
 			# exit this script if a new script was started on this computer.
 			$weOwnMuttex = WeOwn-MutualExclusionFlagFile
 			if($weOwnMuttex -eq $false) {
-				Write-Log "~~~~~~~~~ Exiting this WICK script we started at $script:StartTime because somebody else (hopefully another WICK script) updated the PID in the MutualExclusionFlagFile since then). ~~~~~~~*-" "INFO"
+				Write-Log "~~~~~~~~~ Exiting this WICK script we started at $script:StartTime PID: $PID because somebody else (hopefully another WICK script) updated the PID in the MutualExclusionFlagFile since then). ~~~~~~~*-" "INFO"
 				break;
 			}
 			
@@ -1679,7 +1681,7 @@ try {
 			$script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 		}
 		
-		if ((Test-Path $script:Config['PauseFlagPath']) -eq $true -or $script:Config['PauseScript'] -eq $true) {
+		if ($script:Config['PauseScript'] -eq $true) {
 			$script:g_idleSeconds = 0.0
 			if ($script:g_isIdle -eq $true) {
 				LogSystemEvent_IdleOff
@@ -1883,52 +1885,58 @@ try {
 			#if ($RespectOtherAppsSleepExecutionPreventionFlags -eq $false -or (Test-OtherSystemExecutionStateHeld -eq $false -and $RespectOtherAppsSleepExecutionPreventionFlags -eq $true)) {
 				# Check if ready to sleep
 				if ($script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
-					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "sleep"
+					$sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
+					if($sleepOrHibernatePreventionFlagExists -eq $false) {
+						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "sleep"
 
-					if ($abort) {
-						Write-Log "User aborted sleep." "INFO"
-						$script:g_idleSeconds = 0.0
-						if ($script:g_isIdle -eq $true) {
-							LogSystemEvent_IdleOff
+						if ($abort) {
+							Write-Log "User aborted sleep." "INFO"
+							$script:g_idleSeconds = 0.0
+							if ($script:g_isIdle -eq $true) {
+								LogSystemEvent_IdleOff
+							}
+						} else {
+							Write-Log "Proceeding to sleep because no abort or non-interactive session..." "INFO"
+							#if (Test-Path $script:Config['DontSleepWhileThisFileExistsPath']) {
+							#    Remove-Item $script:Config['DontSleepWhileThisFileExistsPath'] -Force
+							#    Write-Log "Deleted flag file: $script:Config['DontSleepWhileThisFileExistsPath']" "INFO"
+							#}
+							
+							Enter-SleepState
+							$script:g_idleSeconds = 0.0
+							if ($script:g_isIdle -eq $true) {
+								LogSystemEvent_IdleOff
+							}
+							Write-Log "System be woke. Resuming monitoring." "INFO"
 						}
-					} else {
-						Write-Log "Proceeding to sleep because no abort or non-interactive session..." "INFO"
-						#if (Test-Path $script:Config['PauseFlagPath']) {
-						#    Remove-Item $script:Config['PauseFlagPath'] -Force
-						#    Write-Log "Deleted flag file: $script:Config['PauseFlagPath']" "INFO"
-						#}
-						
-						Enter-SleepState
-						$script:g_idleSeconds = 0.0
-						if ($script:g_isIdle -eq $true) {
-							LogSystemEvent_IdleOff
-						}
-						Write-Log "System be woke. Resuming monitoring." "INFO"
 					}
 				}
 				# Check if ready to hibernate
 				if ($script:g_idleSeconds -ge ($script:g_CurrentHibernateIdleTimeMinutes * 60)) {
-					$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "hibernate"
+					$sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
+					if($sleepOrHibernatePreventionFlagExists -eq $false) {
+						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "hibernate"
 
-					if ($abort) {
-						Write-Log "User aborted hibernate." "INFO"
-						$script:g_idleSeconds = 0.0
-						if ($script:g_isIdle -eq $true) {
-							LogSystemEvent_IdleOff
+						if ($abort) {
+							Write-Log "User aborted hibernate." "INFO"
+							$script:g_idleSeconds = 0.0
+							if ($script:g_isIdle -eq $true) {
+								LogSystemEvent_IdleOff
+							}
+						} else {
+							Write-Log "Proceeding to hibernate because no abort or non-interactive session..." "INFO"
+							#if (Test-Path $script:Config['DontSleepWhileThisFileExistsPath']) {
+							#    Remove-Item $script:Config['DontSleepWhileThisFileExistsPath'] -Force
+							#    Write-Log "Deleted flag file: $script:Config['DontSleepWhileThisFileExistsPath']" "INFO"
+							#}
+							
+							Enter-HibernateState
+							$script:g_idleSeconds = 0.0
+							if ($script:g_isIdle -eq $true) {
+								LogSystemEvent_IdleOff
+							}
+							Write-Log "System be woke. Resuming monitoring." "INFO"
 						}
-					} else {
-						Write-Log "Proceeding to hibernate because no abort or non-interactive session..." "INFO"
-						#if (Test-Path $script:Config['PauseFlagPath']) {
-						#    Remove-Item $script:Config['PauseFlagPath'] -Force
-						#    Write-Log "Deleted flag file: $script:Config['PauseFlagPath']" "INFO"
-						#}
-						
-						Enter-HibernateState
-						$script:g_idleSeconds = 0.0
-						if ($script:g_isIdle -eq $true) {
-							LogSystemEvent_IdleOff
-						}
-						Write-Log "System be woke. Resuming monitoring." "INFO"
 					}
 				}
 			#}

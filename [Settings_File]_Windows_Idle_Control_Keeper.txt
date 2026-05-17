@@ -99,8 +99,8 @@ PythonPath:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\pytho
 #~*------------ Full path to the Python executable used to run the audio checker script. It detects the python version on its own if you use that wildcard. (default:"$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe")
 #~*--------------------------------------------------------------------------------------------------#
 
-PauseFlagPath:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script"
-#~*------------ If this file exists, the script pauses monitoring and skips sleep. Allows manual pause/resume by creating/deleting the file. The path should be accessible by all users. (default:"C:\Commands_And_Logs\.ignore_running_Windows_Idle_Control_Keeper_script")
+DontSleepWhileThisFileExistsPath:"D:\Bak\myLongSlowBackup.tmp"
+#~*------------ You can prevent sleep or hibernate while a file exists (e.g. "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users. (default: "D:\Bak\myLongSlowBackup.tmp")
 #~*--------------------------------------------------------------------------------------------------#
 
 MutualExclusionFlagFile:"C:\Commands_And_Logs\.WickMutualExclusionFlag"
