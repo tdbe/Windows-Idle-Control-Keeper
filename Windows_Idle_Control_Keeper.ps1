@@ -735,7 +735,12 @@ function Test-OtherSystemExecutionStateHeld {
 
 # plugged in means AC power in power plan, battery means DC power. Important for sleep timers (different per AC / DC)
 function IsComputerPluggedIn{
-	return (Get-WmiObject -Class BatteryStatus -Namespace root\wmi).PowerOnLine
+	$battery = Get-WmiObject -Class BatteryStatus -Namespace root\wmi -ErrorAction SilentlyContinue
+	if($battery) {
+		return ($battery).PowerOnLine
+	} else {
+		return $true
+	}
 }
 
 #always add type definitions outside of functions (and do the null check) otherwise you're compiling code every function call and also potentially leaking
@@ -769,7 +774,7 @@ if (-not ($script:g_typeName -as [type])) {
 
 function Turn-Display-Off {
 	# it's possible that if thread execution state is set to ES_SYSTEM_REQUIRED (to prevent auto sleep), windows will also not lock the desktop - the security & locking side of things is obscure and may vary by version or policy or drivers even.
-	if ($script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
+	if ($script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true -and $script:Config['LockPcAtThisIdleTimeMinutes'] -gt -1) {
 		Write-Log "Locking PC because we're turning off the display and PreventAndReplaceWindowsAutoSleep is $true." "Info"
 		Lock-PC
 	}
