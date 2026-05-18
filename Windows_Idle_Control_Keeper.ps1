@@ -1729,6 +1729,11 @@ try {
 			# Disk
 			$disk = Get-DiskIoKBps
 			$diskAbove = $disk -gt $script:Config['DiskThresholdKBps']
+			#if($diskAbove -eq $true) {
+				# Play a sound to debug when an array of write events happen - so you can quickly look at process explorer or something.
+				#(New-Object System.Media.SoundPlayer "$env:windir\Media\Ring06.wav").Play()
+				#Write-Log "|||||| DISK ABOVE THRESHOLD: $diskAbove ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" "INFO"
+			#}
 			$script:g_diskHistory.Enqueue($diskAbove)
 			if ($script:g_diskHistory.Count -gt $script:g_maxSamples) { 
 				$null = $script:g_diskHistory.Dequeue()
