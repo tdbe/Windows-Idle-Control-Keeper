@@ -206,6 +206,9 @@
 
 .PARAMETER ActivityDetectionPeriodSamplesAudio
   Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
+  
+.PARAMETER UseOnlyInputAndAudioEventsForDisplayOff
+  If set to $true, the screensaver (if available) and the monitor off, will happen based on a separate idle timer which can only be interrupted by audio playback or user input. This is nice if you want to put your computer to work, and walk away with the guarantee that the monitor won't waste power even if the pc will not sleep. (default: $false)
 
 .PARAMETER IdleSecondsBeforeWeBroadcastSystemIdleEvent
   How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Application Log (regardless of when the display is turned off or screensaver turns on or anything else). (default: 60)
@@ -286,6 +289,7 @@ param(
     [int]$ActivityDetectionPeriodSamplesAudio,
     [int]$LockPcAtThisIdleTimeMinutes,
     [int]$IdleSecondsBeforeWeBroadcastSystemIdleEvent,
+    [bool]$UseOnlyInputAndAudioEventsForDisplayOff,
     [string[]]$DiskBlacklistDrives,
     [string]$Settings_File_Windows_Idle_Control_Keeper_txt,
     [string]$PycawAudioCheckerPath,
@@ -323,6 +327,7 @@ $script:Config = @{
     ActivityDetectionPeriodSamplesAudio         			= 5
     LockPcAtThisIdleTimeMinutes                 			= 0
     IdleSecondsBeforeWeBroadcastSystemIdleEvent 			= 60
+    UseOnlyInputAndAudioEventsForDisplayOff      			= $false
     DiskBlacklistDrives                         			= @("E", "F")
     Settings_File_Windows_Idle_Control_Keeper_txt 			= "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
     PycawAudioCheckerPath                       			= "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
@@ -1496,6 +1501,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 $script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSeconds']))# / $script:Config['SampleIntervalSec']))
 $script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamplesAudio']))# / $script:Config['SampleIntervalSec']))
 $script:g_idleSeconds = 0.0
+$script:g_idleSeconds_userActivity = 0.0
 $script:g_isIdle = $false
 $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:g_lastElapsedSeconds = 0.0
@@ -1539,6 +1545,7 @@ try {
 		$updateDiffInMinutes = $minutesPassed - $script:g_minutesPassedLastFrame
 		if($updateDiffInMinutes -gt 1) {
 			$script:g_idleSeconds = -1.0 * $script:Config['FailsafeTimeMinutes'] * 60 # we should set it to 0 here but I do a failsafe time here in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get 60 seconds to stop it even if you set it to run hidden on system startup from task scheduler.
+			$script:g_idleSeconds_userActivity = -1.0 * $script:Config['FailsafeTimeMinutes'] * 60
 			
 			$deltaTimeSeconds = 0.0
 			Write-Log "It's been $updateDiffInMinutes minute(s) since the last update, which means we just started, or were sleeping, or somehow lagging a lot. Resetting idle counter, with failsafe, to: $script:g_idleSeconds." "INFO"
@@ -1703,6 +1710,7 @@ try {
 		
 		if ($script:Config['PauseScript'] -eq $true) {
 			$script:g_idleSeconds = 0.0
+			$script:g_idleSeconds_userActivity = 0.0
 			if ($script:g_isIdle -eq $true) {
 				LogSystemEvent_IdleOff
 			}
@@ -1755,7 +1763,7 @@ try {
 				$null = $script:g_audioHistory.Dequeue()
 			}
 
-			# Mouse, replaceed with Get-SecondsSinceLastInputInfo
+			# Mouse, replaced with Get-SecondsSinceLastInputInfo
 			#$currMouse = Get-MouseMovementPixels
 			#$mouseDelta = [math]::Sqrt((($currMouse.X - $prevMouse.X) * ($currMouse.X - $prevMouse.X)) + 
 			#							(($currMouse.Y - $prevMouse.Y) * ($currMouse.Y - $prevMouse.Y)))
@@ -1805,6 +1813,9 @@ try {
 				}
 			}
 
+			$audioBasedActivityThisFrame = $false
+			$inputBasedActivityThisFrame = $false
+
 			# Audio: all samples must be true
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
 				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
@@ -1814,11 +1825,10 @@ try {
 						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 					}
 					$hasSustainedActivity = $true
+					$audioBasedActivityThisFrame = $true
 				}
 			}
-			
-			#if ($mouseMoved) {
-			$inputBasedActivityThisFrame = $false
+
 			$secondsSinceLastInputInfo = Get-SecondsSinceLastInputInfo
 			if ($secondsSinceLastInputInfo -le $script:g_idleSeconds) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSeconds']) {
@@ -1878,22 +1888,36 @@ try {
 				$script:g_idleSeconds += $deltaTimeSeconds
 			}
 
+			
+			$userActivity = $false
+			if ($inputBasedActivityThisFrame -or $audioBasedActivityThisFrame) {
+				$userActivity = $true
+				$script:g_idleSeconds_userActivity = 0.0
+			} else {
+				$script:g_idleSeconds_userActivity += $deltaTimeSeconds
+			}
+
 			if($inputBasedActivityThisFrame -eq $false) {
-				# Check if we are in charge of turning off the display or turning on any screensaver, and do it if it's time
+				# Check if we are in charge of turning off the display or turning on any screensaver, and do it if it's time 
+				$displayIdleSeconds = $script:g_idleSeconds
+				if ($userActivity -eq $true -and $script:Config['UseOnlyInputAndAudioEventsForDisplayOff'] -eq $true) {
+					$displayIdleSeconds = $script:g_idleSeconds_userActivity
+				}
+
 				if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
-					if($script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($script:g_idleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+					if($script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($displayIdleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
 						Start-Screensaver
 					}
 					
-					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($script:g_idleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
+					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($displayIdleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
 						Turn-Display-Off
 					}
 				} else {
-					if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($script:g_idleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+					if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($displayIdleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
 						Start-Screensaver
 					}
 					
-					if($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($script:g_idleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
+					if($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($displayIdleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
 						Turn-Display-Off
 					}
 				}
