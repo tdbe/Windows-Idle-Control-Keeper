@@ -953,7 +953,7 @@ function Get-PowerPlanIdleTimeoutMinutes {
 		
 		# Power Setting GUID: 29f6c1db-86da-48c5-9fdb-f2b67b1f44da  (Sleep after)
 		# GUID Alias: STANDBYIDLE
-		$STANDBYIDLE = "29f6c1db-86da-48c5-9fdb-f2b67b1f44da"
+		$STANDBYIDLETIMOUT = "29f6c1db-86da-48c5-9fdb-f2b67b1f44da"
 		
         # Read StandbyIdleTimeout (AC)
         $sleepOutput = powercfg /q $activePlan $SUB_SLEEP $STANDBYIDLETIMOUT 2>$null
@@ -994,7 +994,7 @@ function Get-PowerPlanIdleTimeoutMinutes {
 			throw "powercfg failed for hibernate" 
 		} else {
 			$regex = [regex]'Current AC Power Setting Index:\s+(0x[0-9a-fA-F]+)'
-			$match = $regex.Match($sleepOutput)
+			$match = $regex.Match($hibernateOutput)
 			
 			#if ($hibernateOutput -match 'Current AC Power Setting Index:\s+(\d+)') {
 				#$hibernateSec = [int]$matches[1]
