@@ -1409,6 +1409,52 @@ function WeOwn-MutualExclusionFlagFile {
     }
 }
 
+# Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest "\\Network_Paths\On_Windows\offline_network_paths\can\take\22s\to\a\minute\before_they_return_false"
+function Test-Path-Timeouted-Scope {
+	[CmdletBinding()]
+    param(
+	    [int]$timeoutMilliseconds,
+        [string]$pathToTest
+    )
+	
+	if($timeoutMilliseconds -le 1) {
+		Write-Log "[Test-Path-Timeouted] You didn't provide a timeoutMilliseconds parameter: $timeoutMilliseconds for this path: $pathToTest" "WARN"
+		$timeoutMilliseconds = 5000
+	}
+	
+	$ps = [powershell]::Create().AddScript("Test-Path '$pathToTest'")
+	$handle = $ps.BeginInvoke()
+	if(-not $handle.AsyncWaitHandle.WaitOne($timeoutMilliseconds)){
+		$boolExists = $false
+	} else {
+		$boolExists = $true
+	}
+	$boolExists
+	if ($boolExists) {
+		$result = $ps.EndInvoke($handle)
+	} else {
+		$result = $boolExists
+	}
+	#Write-Log "[Test-Path-Timeouted] ---------- boolExists: $boolExists, result: $result" "WARN"
+	return $result -or $boolExists
+}
+
+function Test-Path-Timeouted {
+	[CmdletBinding()]
+    param(
+	    [int]$timeoutMilliseconds,
+        [string]$pathToTest
+    )
+	
+	$res = Test-Path-Timeouted-Scope -timeoutMilliseconds $timeoutMilliseconds -pathToTest $pathToTest
+	#Write-Log "[Test-Path-Timeouted] ---------- res: $res" "WARN"
+	if($res -eq "True True" -or $res -eq $true) {
+		return $true
+	} else {
+		return $false
+	}
+}
+
 # --- Main Sequence ---
 LogSystemEvent_OnStart
 CreateOrUpdate-MutualExclusionFlagFile
@@ -1513,7 +1559,13 @@ $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamp
 
 $script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
-$script:sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
+$script:sleepOrHibernatePreventionFlagExists = $false
+# $script:sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
+$script:sleepOrHibernatePreventionFlagExists = Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']
+$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
+if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
+	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file exists: ($flagFile)" "INFO"
+} 
 $flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
 	Write-Log "We won't sleep or hibernate, because of the DontSleepWhileThisFileExistsPath flag file ($flagFile)" "INFO"
@@ -1573,7 +1625,8 @@ try {
 			$script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
 			
 			$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
-			$dsfexists = Test-Path $flagFile
+			#$dsfexists = Test-Path $flagFile
+			$dsfexists = Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $flagFile
 			if ($script:sleepOrHibernatePreventionFlagExists -ne $dsfexists) {
 				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $script:sleepOrHibernatePreventionFlagExists to $dsfexists" "INFO"
 			}
@@ -1945,7 +1998,7 @@ try {
 							}
 						} else {
 							Write-Log "Proceeding to sleep because no abort or non-interactive session..." "INFO"
-							#if (Test-Path $script:Config['DontSleepWhileThisFileExistsPath']) {
+							#if (Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']) {
 							#    Remove-Item $script:Config['DontSleepWhileThisFileExistsPath'] -Force
 							#    Write-Log "Deleted flag file: $script:Config['DontSleepWhileThisFileExistsPath']" "INFO"
 							#}
@@ -1972,7 +2025,7 @@ try {
 							}
 						} else {
 							Write-Log "Proceeding to hibernate because no abort or non-interactive session..." "INFO"
-							#if (Test-Path $script:Config['DontSleepWhileThisFileExistsPath']) {
+							#if (Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']) {
 							#    Remove-Item $script:Config['DontSleepWhileThisFileExistsPath'] -Force
 							#    Write-Log "Deleted flag file: $script:Config['DontSleepWhileThisFileExistsPath']" "INFO"
 							#}
