@@ -1952,35 +1952,34 @@ try {
 
 			if($inputBasedActivityThisFrame -eq $false) {
 				# Check if we are in charge of turning off the display or turning on any screensaver, and do it if it's time 
-				$displayIdleSeconds = $script:g_idleSeconds
-				if ($userActivity -eq $true -and $script:Config['UseOnlyInputAndAudioEventsForDisplayOff'] -eq $true) {
-					$displayIdleSeconds = $script:g_idleSeconds_userActivity
+				$displayIdleMinutes = $script:g_idleSeconds
+				$iaflag = $script:Config['UseOnlyInputAndAudioEventsForDisplayOff']
+				if ($userActivity -eq $false -and $iaflag -eq $true) {
+					$displayIdleMinutes = $script:g_idleSeconds_userOrAudioActivity / 60
 				}
 
 				if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
-					if($script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($displayIdleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+					if($script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_ScreensaverTimeoutDurationMinutes) {
 						Start-Screensaver
 					}
-					
-					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($displayIdleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
+					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_DisplayTimeoutDurationMinutes) {
 						Turn-Display-Off
 					}
 				} else {
-					if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and ($displayIdleSeconds / 60) -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+					if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_ScreensaverTimeoutDurationMinutes) {
 						Start-Screensaver
 					}
-					
-					if($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $($displayIdleSeconds / 60) -gt $script:g_DisplayTimeoutDurationMinutes) {
+					if($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_DisplayTimeoutDurationMinutes) {
 						Turn-Display-Off
 					}
 				}
 				# else NOTE: if $script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan'] is true and $script:Config['PreventAndReplaceWindowsAutoSleep'] is false, then the PC will turn off its display and turn on its screensaver on its own, no involvement from us
-			}
-			
-			if ($script:g_PcLockedOnDemand -eq $false -and $script:Config['LockPcAtThisIdleTimeMinutes'] -and $script:Config['LockPcAtThisIdleTimeMinutes'] -gt $script:Config['FailsafeTimeMinutes'] -and [math]::Round($script:g_idleSeconds / 60) -gt $script:Config['LockPcAtThisIdleTimeMinutes']) {
-				# Write-Log "g_PcLockedOnDemand: $script:g_PcLockedOnDemand, LockPcAtThisIdleTimeMinutes: $script:Config['LockPcAtThisIdleTimeMinutes'], FailsafeTimeMinutes: $script:Config['FailsafeTimeMinutes'], idleSeconds: $script:g_idleSeconds" "INFO"
-				Write-Log "Locking PC on demand at $($script:Config['LockPcAtThisIdleTimeMinutes']) min of idle." "Info"
-				Lock-PC
+				
+				if ($script:g_PcLockedOnDemand -eq $false -and $script:Config['LockPcAtThisIdleTimeMinutes'] -and $script:Config['LockPcAtThisIdleTimeMinutes'] -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:Config['LockPcAtThisIdleTimeMinutes']) {
+					# Write-Log "g_PcLockedOnDemand: $script:g_PcLockedOnDemand, LockPcAtThisIdleTimeMinutes: $script:Config['LockPcAtThisIdleTimeMinutes'], FailsafeTimeMinutes: $script:Config['FailsafeTimeMinutes'], idleSeconds: $script:g_idleSeconds" "INFO"
+					Write-Log "Locking PC on demand at $($script:Config['LockPcAtThisIdleTimeMinutes']) min of idle." "Info"
+					Lock-PC
+				}
 			}
 
 			# Note: this doesn't work unless you run the script as administrator, so I commented it out ctrl+f:[respectOtherApps]
