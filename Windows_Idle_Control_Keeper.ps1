@@ -1436,7 +1436,7 @@ function Test-Path-Timeouted-Scope {
 		$result = $boolExists
 	}
 	#Write-Log "[Test-Path-Timeouted] ---------- boolExists: $boolExists, result: $result" "WARN"
-	return $result -or $boolExists
+	return $result -and $boolExists
 }
 
 function Test-Path-Timeouted {
@@ -1447,10 +1447,11 @@ function Test-Path-Timeouted {
     )
 	
 	$res = Test-Path-Timeouted-Scope -timeoutMilliseconds $timeoutMilliseconds -pathToTest $pathToTest
-	#Write-Log "[Test-Path-Timeouted] ---------- res: $res" "WARN"
-	if($res -eq "True True" -or $res -eq $true) {
+	if(($res -eq "True True" -or $res -eq $true) -and $res -ne "True False") {
+		#Write-Log "[Test-Path-Timeouted] ----------rt res: $res" "WARN"
 		return $true
 	} else {
+		#Write-Log "[Test-Path-Timeouted] ----------rf res: $res" "WARN"
 		return $false
 	}
 }
@@ -1565,11 +1566,7 @@ $script:sleepOrHibernatePreventionFlagExists = Test-Path-Timeouted -timeoutMilli
 $flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
 	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file exists: ($flagFile)" "INFO"
-} 
-$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
-if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
-	Write-Log "We won't sleep or hibernate, because of the DontSleepWhileThisFileExistsPath flag file ($flagFile)" "INFO"
-} 
+}
 
 if ($script:Config['PauseScript'] -eq $true) {
 	Write-Log "Script pause flag is present - while loop running but skipping until flag removed or renamed." "INFO"
@@ -1952,7 +1949,7 @@ try {
 
 			if($inputBasedActivityThisFrame -eq $false) {
 				# Check if we are in charge of turning off the display or turning on any screensaver, and do it if it's time 
-				$displayIdleMinutes = $script:g_idleSeconds
+				$displayIdleMinutes = $script:g_idleSeconds / 60
 				$iaflag = $script:Config['UseOnlyInputAndAudioEventsForDisplayOff']
 				if ($userActivity -eq $false -and $iaflag -eq $true) {
 					$displayIdleMinutes = $script:g_idleSeconds_userOrAudioActivity / 60
@@ -1960,16 +1957,20 @@ try {
 
 				if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 					if($script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+						#Write-Log ">>>> starting screensaver (pwas): iaflag: $iaflag, displayIdleMinutes: $displayIdleMinutes, script:g_DisplayTimeoutDurationMinutes: $script:g_DisplayTimeoutDurationMinutes)" "INFO"
 						Start-Screensaver
 					}
 					if($script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_DisplayTimeoutDurationMinutes) {
+						#Write-Log ">>>> turning off display (pwas): iaflag: $iaflag, displayIdleMinutes: $displayIdleMinutes, script:g_DisplayTimeoutDurationMinutes: $script:g_DisplayTimeoutDurationMinutes)" "INFO"
 						Turn-Display-Off
 					}
 				} else {
 					if($script:Config['TurnOnScreensaverAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_ScreenSaverStarted -eq $false -and $script:g_ScreensaverTimeoutDurationMinutes -and $script:g_ScreensaverTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_ScreensaverTimeoutDurationMinutes) {
+						#Write-Log ">>>> starting screensaver: iaflag: $iaflag, displayIdleMinutes: $displayIdleMinutes, script:g_DisplayTimeoutDurationMinutes: $script:g_DisplayTimeoutDurationMinutes)" "INFO"
 						Start-Screensaver
 					}
 					if($script:Config['TurnOffDisplayAtThisIdleTimeMinutes'] -gt 0.0 -and $script:g_DisplayTurnedOff -eq $false -and $script:g_DisplayTimeoutDurationMinutes -and $script:g_DisplayTimeoutDurationMinutes -gt $script:Config['FailsafeTimeMinutes'] -and $displayIdleMinutes -gt $script:g_DisplayTimeoutDurationMinutes) {
+						#Write-Log ">>>> turning off display: iaflag: $iaflag, displayIdleMinutes: $displayIdleMinutes, script:g_DisplayTimeoutDurationMinutes: $script:g_DisplayTimeoutDurationMinutes)" "INFO"
 						Turn-Display-Off
 					}
 				}
