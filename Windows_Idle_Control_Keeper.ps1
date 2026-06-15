@@ -496,6 +496,8 @@ $script:g_minutesPassedLastFrame = 0
 
 $script:StartTime = Get-Date
 
+$script:sleepOrHibernatePreventionFlagExists = $false
+
 # --- Logging Setup ---
 # logs to Windows > Event Viewer > Windows Logs > Application. It will have the date and time of the event. These can be queried by scripts.
 function LogSystemEvent_IdleOn {
@@ -1446,13 +1448,16 @@ function Test-Path-Timeouted {
         [string]$pathToTest
     )
 	
-	$res = Test-Path-Timeouted-Scope -timeoutMilliseconds $timeoutMilliseconds -pathToTest $pathToTest
-	if(($res -eq "True True" -or $res -eq $true) -and $res -ne "True False") {
-		#Write-Log "[Test-Path-Timeouted] ----------rt res: $res" "WARN"
-		return $true
+	$res0 = Test-Path-Timeouted-Scope -timeoutMilliseconds $timeoutMilliseconds -pathToTest $pathToTest
+	$res = "s: " + $res0
+	if($res -ceq "s: True True") {
+		#Write-Log "[Test-Path-Timeouted] ----------r true res: $res" "WARN"
+		#return $true
+		$script:sleepOrHibernatePreventionFlagExists = $true
 	} else {
-		#Write-Log "[Test-Path-Timeouted] ----------rf res: $res" "WARN"
-		return $false
+		#Write-Log "[Test-Path-Timeouted] ----------r false res: $res" "WARN"
+		#return $false
+		$script:sleepOrHibernatePreventionFlagExists = $false
 	}
 }
 
@@ -1560,12 +1565,11 @@ $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamp
 
 $script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
-$script:sleepOrHibernatePreventionFlagExists = $false
 # $script:sleepOrHibernatePreventionFlagExists = Test-Path $script:Config['DontSleepWhileThisFileExistsPath']
-$script:sleepOrHibernatePreventionFlagExists = Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']
+Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']
 $flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
-	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file exists: ($flagFile)" "INFO"
+	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file or folder exists: ($flagFile)" "INFO"
 }
 
 if ($script:Config['PauseScript'] -eq $true) {
