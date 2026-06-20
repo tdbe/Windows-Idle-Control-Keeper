@@ -788,7 +788,7 @@ function Turn-Display-Off {
 	
 	$script:g_DisplayTurnedOff = $true
 	Write-Log "Turning off Display. g_DisplayTurnedOff: $script:g_DisplayTurnedOff" "Info"
-	Write-Log "" "Info"
+	Write-Log " " "Info"
 	[Display]::TurnOff()
 }
 
@@ -811,10 +811,10 @@ function Lock-PC {
 	if (-not $result) {
 		$script:g_PcLockedOnDemand = $false
 		$err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-		Write-Log "" "Info"
+		Write-Log " " "Info"
 	} else {
 		Write-Log "Locked PC. g_PcLockedOnDemand: $script:g_PcLockedOnDemand" "INFO"
-		Write-Log "" "Info"
+		Write-Log " " "Info"
 	}
 }
 
@@ -842,7 +842,7 @@ if (-not ($script:g_typeName -as [type])) {
 
 function Start-Screensaver {
 	Write-Log "Starting Screen Saver (if it exists)." "Info"
-	Write-Log "" "Info"
+	Write-Log " " "Info"
 	$script:g_ScreenSaverStarted = $true
     [Screensaver]::Trigger()
 }
@@ -1088,7 +1088,7 @@ if (-not ($script:g_typeName -as [type])) {
 # --- Sleep API ---
 function Enter-SleepState {
 	Write-Log "Starting Sleep." "INFO"
-	Write-Log "" "INFO"
+	Write-Log " " "INFO"
     $result = [PowerManagement]::SetSuspendState($false, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
@@ -1098,7 +1098,7 @@ function Enter-SleepState {
 
 function Enter-HibernateState {
 	Write-Log "Starting Hibernate." "INFO"
-	Write-Log "" "INFO"
+	Write-Log " " "INFO"
     $result = [PowerManagement]::SetSuspendState($true, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
