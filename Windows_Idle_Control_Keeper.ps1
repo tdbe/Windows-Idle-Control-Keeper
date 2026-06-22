@@ -1634,14 +1634,14 @@ try {
 			
 			$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 			#$dsfexists = Test-Path $flagFile
-			$dsfexists = Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $flagFile
-			if ($script:sleepOrHibernatePreventionFlagExists -ne $dsfexists) {
-				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $script:sleepOrHibernatePreventionFlagExists to $dsfexists" "INFO"
+			$dsfexistsOld = $script:sleepOrHibernatePreventionFlagExists
+			Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $flagFile
+			if ($script:sleepOrHibernatePreventionFlagExists -ne $dsfexistsOld) {
+				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $dsfexistsOld to $script:sleepOrHibernatePreventionFlagExists" "INFO"
 			}
-			if($dsfexists -eq $true) {
+			if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
 				Write-Log "We won't sleep or hibernate, because of this prevention file or folder $flagFile" "INFO"
-			} 
-			$script:sleepOrHibernatePreventionFlagExists = $dsfexists
+			}
 		}
 		
 		# Poll power plan timeout every $script:Config['SettingsPollIntervalMinutes'] updates
