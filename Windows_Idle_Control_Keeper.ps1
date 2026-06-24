@@ -1170,8 +1170,10 @@ function Get-DiskIoKBps {
 
         if (-not $allowedDrives) { return 0 }
 
-        $totalReadKBps = 0
-        $totalWriteKBps = 0
+        #$totalReadKBps = 0
+        #$totalWriteKBps = 0
+		$maxReadKBps = 0
+        $maxWriteKBps = 0
 
         foreach ($disk in $allowedDrives) {
             # Win32_PerfFormattedData_PerfDisk_LogicalDisk properties (bytes/sec)
@@ -1184,11 +1186,20 @@ function Get-DiskIoKBps {
 				$writeBytes = 0 
 			}            
             # Convert to KB/s
-            $totalReadKBps += $readBytes / 1KB
-            $totalWriteKBps += $writeBytes / 1KB
+			$readKBytes = $readBytes / 1KB
+			$writeKBytes = $writeBytes / 1KB
+            #$totalReadKBps += $readKBytes
+            #$totalWriteKBps += $writeKBytes
+			if($readKBytes > $maxReadKBps) {
+				$maxReadKBps = $readKBytes
+			}
+			if($writeKBytes > $maxWriteKBps) {
+				$maxWriteKBps = $writeKBytes
+			}
         }
 
-        return [long]($totalReadKBps + $totalWriteKBps)
+        #return [long]($totalReadKBps + $totalWriteKBps)
+        return [long]($maxReadKBps + $maxWriteKBps)
     }
     catch {
         Write-Log "Get-DiskIoKBps failed: $_" "WARN"
