@@ -1117,6 +1117,42 @@ function Get-CpuUsagePercent {
 	}
     return [double]$avg
 }
+# Using the more accurate Processor Utility method: "Task Manager’s Processes and Performance tabs now use the “% Processor Utility” counter as the basis for their CPU numbers, rather than the “% Processor Time” counter Task Manager had relied upon and that is still used by Task Manager’s Details tab and by Sysinternals Process Explorer."
+function Get-CpuViaProcessorUtility {
+    <#
+    .SYNOPSIS
+        Returns the total system-wide CPU Utility percentage.
+    .DESCRIPTION
+        Uses the '\Processor Information(*)\% Processor Utility' counter.
+        This provides the "modern" Task Manager percentage that accounts 
+        for CPU frequency scaling/throttling.
+    #>
+    try {
+        # 1. Query the specific 'Processor Information' counter
+        # This counter is the one used by the Task Manager Performance tab.
+        $counter = Get-Counter "\Processor Information(*)\% Processor Utility" -ErrorAction Stop
+
+        # 2. The counter returns one sample per logical core.
+        # To get the total system load, we must average the values of all cores.
+        $coreValues = $counter.CounterSamples | ForEach-Object { $_.CookedValue }
+
+        if ($null -eq $coreValues -or $coreValues.Count -eq 0) {
+            return 0.0
+        }
+
+        # 3. Calculate the average across all cores
+        # (Total Utility / Number of Cores) = System-wide Utility
+        $systemWideUtility = ($coreValues | Measure-Object -Average).Average
+
+        # We round to 2 decimal places for a clean number
+        return [Math]::Round($systemWideUtility, 2)
+    }
+    catch {
+        # If the counter is unavailable or fails, return 0 or a specific error value
+        Write-Warning "Failed to retrieve CPU Utility: $_"
+        return 0.0
+    }
+}
 
 # --- Disk: SAFE - uses LogicalDisk counters (no spin-up risk) ---
 function Get-DiskIoKBps {
@@ -1790,7 +1826,7 @@ try {
 		if($skipThisFrame -eq $false) {
 			
 			# CPU
-			$cpu = Get-CpuUsagePercent
+			$cpu = Get-CpuViaProcessorUtility
 			$cpuAbove = $cpu -gt $script:Config['CpuThresholdPercent']
 			$script:g_cpuHistory.Enqueue($cpuAbove)
 			if ($script:g_cpuHistory.Count -gt $script:g_maxSamples) { 
