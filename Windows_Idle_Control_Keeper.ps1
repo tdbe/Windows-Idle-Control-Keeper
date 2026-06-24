@@ -811,6 +811,7 @@ function Lock-PC {
 	if (-not $result) {
 		$script:g_PcLockedOnDemand = $false
 		$err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+		Write-Log "Failed to lock workstation." "ERROR"
 		Write-Log " " "Info"
 	} else {
 		Write-Log "Locked PC. g_PcLockedOnDemand: $script:g_PcLockedOnDemand" "INFO"
@@ -1093,6 +1094,7 @@ function Enter-SleepState {
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
         Write-Log "Sleep failed! Win32 error: $err" "ERROR"
+        Write-Log " " "ERROR"
     }
 }
 
@@ -1560,7 +1562,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 $script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSeconds']))# / $script:Config['SampleIntervalSec']))
 $script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamplesAudio']))# / $script:Config['SampleIntervalSec']))
 $script:g_idleSeconds = 0.0
-$script:g_idleSeconds_userActivity = 0.0
+$script:g_idleSeconds_userOrAudioActivity = 0.0
 $script:g_isIdle = $false
 $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:g_lastElapsedSeconds = 0.0
@@ -1605,7 +1607,7 @@ try {
 		$updateDiffInMinutes = $minutesPassed - $script:g_minutesPassedLastFrame
 		if($updateDiffInMinutes -gt 1) {
 			$script:g_idleSeconds = -1.0 * $script:Config['FailsafeTimeMinutes'] * 60 # we should set it to 0 here but I do a failsafe time here in case somebody screws something up / adds something that for example would lock the pc every second. This way if you sleep + wake, or restart the pc, you get 60 seconds to stop it even if you set it to run hidden on system startup from task scheduler.
-			$script:g_idleSeconds_userActivity = -1.0 * $script:Config['FailsafeTimeMinutes'] * 60
+			$script:g_idleSeconds_userOrAudioActivity = -1.0 * $script:Config['FailsafeTimeMinutes'] * 60
 			
 			$deltaTimeSeconds = 0.0
 			Write-Log "It's been $updateDiffInMinutes minute(s) since the last update, which means we just started, or were sleeping, or somehow lagging a lot. Resetting idle counter, with failsafe, to: $script:g_idleSeconds." "INFO"
@@ -1771,7 +1773,7 @@ try {
 		
 		if ($script:Config['PauseScript'] -eq $true) {
 			$script:g_idleSeconds = 0.0
-			$script:g_idleSeconds_userActivity = 0.0
+			$script:g_idleSeconds_userOrAudioActivity = 0.0
 			if ($script:g_isIdle -eq $true) {
 				LogSystemEvent_IdleOff
 			}
@@ -1839,9 +1841,13 @@ try {
 				$activeCount = ($script:g_cpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+						Write-Log " " "INFO"
 						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
+						Write-Host-Wrapper " " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -1852,9 +1858,13 @@ try {
 				$activeCount = ($script:g_diskHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+						Write-Log " " "INFO"
 						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec.[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
+						Write-Host-Wrapper " " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -1881,9 +1891,13 @@ try {
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
 				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+						Write-Log " " "INFO"
 						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
+						Write-Host-Wrapper " " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
 					$audioBasedActivityThisFrame = $true
@@ -1894,11 +1908,15 @@ try {
 			if ($secondsSinceLastInputInfo -le $script:g_idleSeconds) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSeconds']) {
 					if($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']){
+						Write-Log " " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose'] -eq $true) {
+						Write-Host-Wrapper " " "INFO"
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
 					}
 				#}
 				$hasSustainedActivity = $true
@@ -1953,9 +1971,9 @@ try {
 			$userActivity = $false
 			if ($inputBasedActivityThisFrame -or $audioBasedActivityThisFrame) {
 				$userActivity = $true
-				$script:g_idleSeconds_userActivity = 0.0
+				$script:g_idleSeconds_userOrAudioActivity = 0.0
 			} else {
-				$script:g_idleSeconds_userActivity += $deltaTimeSeconds
+				$script:g_idleSeconds_userOrAudioActivity += $deltaTimeSeconds
 			}
 
 			if($inputBasedActivityThisFrame -eq $false) {
