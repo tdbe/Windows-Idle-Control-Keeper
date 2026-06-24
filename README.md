@@ -6,7 +6,7 @@
 
 **WICK - Windows Idle Control Keeper**
 
-This non-admin script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, input, and peak Sound value; counting idle-breaking event frequency and amplitude per time periods, to determine if an Idle timer should continue or be broken. It's Windows Power Plan aware, including display off and screensaver schedule, and maintains windows screen locking.
+This non-admin script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, GPU, (non-virtual) Network (both internet and LAN), Storage, input, and peak Sound value; counting idle-breaking event frequency and amplitude per time periods, to determine if an Idle timer should continue or be broken. It's Windows Power Plan aware, including display off and screensaver schedule, and maintains windows screen locking.
 
 I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using obscure and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
@@ -20,7 +20,7 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 - Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 - Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
-- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
+- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, GPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
 - Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 - Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 - Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
@@ -63,7 +63,7 @@ were sleeping or somehow lagging a lot, Resetting idle counter.
 [2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
 [2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
 [2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
-[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
+[2026-04-30 00:53:59] [INFO] CPU: 1 % | GPU: 6 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
 ```
 
 ## Notes: 

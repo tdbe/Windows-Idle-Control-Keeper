@@ -3,7 +3,7 @@
 	
 .SYNOPSIS
 
-	🕯️W.I.C.K. Handles system Idle using your specific thresholds & conditions. It triggers or prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, (non-virtual) Network (internet & LAN), Storage, Input, peak Sound value. Idle-breaking events via frequency & amplitude / time periods. Power Plan aware.
+	🕯️W.I.C.K. Handles system Idle using your specific thresholds & conditions. It triggers or prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, GPU, (non-virtual) Network (internet & LAN), Storage, Input, peak Sound value. Idle-breaking events via frequency & amplitude / time periods. Power Plan aware.
 	
 .DESCRIPTION
 
@@ -15,7 +15,7 @@
 
 	**WICK - Windows Idle Control Keeper**
 
-	This non-admin script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, (non-virtual) Network (both internet and LAN), Storage, input, and peak Sound value; counting idle-breaking event frequency and amplitude per time periods, to determine if an Idle timer should continue or be broken. It's Windows Power Plan aware, including display off and screensaver schedule, and maintains windows screen locking.
+	This non-admin script detects Idle activity with your specific thresholds and conditions, and triggers / prevents Windows sleep, hibernate, display, lock, screen saver, on Your terms. Detects activity on CPU, GPU, (non-virtual) Network (both internet and LAN), Storage, input, and peak Sound value; counting idle-breaking event frequency and amplitude per time periods, to determine if an Idle timer should continue or be broken. It's Windows Power Plan aware, including display off and screensaver schedule, and maintains windows screen locking.
 
 	I don't usually post my system scripts but it annoyed me that for such a wide need, there was nothing out there but forum threads of people using obscure and partial tools like [DontSleep!.exe](https://www.softwareok.com/?Download=DontSleep) [from 2014](https://www.chip.de/downloads/Don-t-Sleep_42626965.html)
 
@@ -29,7 +29,7 @@
 	- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
-	- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
+	- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, GPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
 	- Can prevent windows from sleeping/hibernate until this script decides it's time, or work alongside it.
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
@@ -72,7 +72,7 @@
 	[2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
 	[2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
 	[2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
-	[2026-04-30 00:53:59] [INFO] CPU: 1 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
+	[2026-04-30 00:53:59] [INFO] CPU: 1 % | GPU: 6 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
 	```
 
 	## Notes: 
@@ -191,6 +191,9 @@
 
 .PARAMETER CpuThresholdPercent
   CPU usage above this resets idle timer. (default: 7)
+  
+.PARAMETER GpuThresholdPercent
+  GPU usage above this resets idle timer. (default: 30)
 
 .PARAMETER DiskThresholdKBps
   Disk I/O (KB/s) above this resets idle timer. Sums (read + write) * all the disks except the DiskBlacklistDrives. It also detects any ongoing volume shadowcopy service activity e.g. if you're doing a backup. (default: 1250)
@@ -282,6 +285,7 @@ param(
     [int]$TurnOnScreensaverAtThisIdleTimeMinutes,
     [int]$TurnOffDisplayAtThisIdleTimeMinutes,
     [int]$CpuThresholdPercent,
+    [int]$GpuThresholdPercent,
     [int]$DiskThresholdKBps,
     [int]$NetworkThresholdKBps,
     [int]$ActiveSamplesWithinInterval,
@@ -320,6 +324,7 @@ $script:Config = @{
     TurnOnScreensaverAtThisIdleTimeMinutes      			= 0
     TurnOffDisplayAtThisIdleTimeMinutes         			= 0
     CpuThresholdPercent                         			= 7
+    GpuThresholdPercent                         			= 30
     DiskThresholdKBps                           			= 1250
     NetworkThresholdKBps                        			= 850
     ActiveSamplesWithinInterval                 			= 3
@@ -1154,6 +1159,72 @@ function Get-CpuViaProcessorUtility {
     }
 }
 
+# --- GPUs ---
+# call this every time you poll for new settings
+function Update-GpuTypes {
+	# detect if the gpu type exists
+	$nv = [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue)
+	$am = [bool](Get-Command rocm-smi -ErrorAction SilentlyContinue)
+	if( $nv -ne $script:HasNvidia ){
+		Write-Log "Nvidia gpu detected status changed: $($script:HasNvidia) -> $nv" "INFO"
+		$script:HasNvidia = $nv
+	}
+	if( $am -ne $script:HasAmd ){
+		Write-Log "Nvidia gpu detected status changed: $($script:HasAmd) -> $am" "INFO"
+		$script:HasAmd = $am
+	}
+}
+# If you have any number of AMD and/or Nvidia gpu(s), this function will get the maximum GPU usage percentage among all of those available gpus (so, a max, not an addition or an average or a median).
+function Get-MaxGpuUsage {
+    
+    # detect if the gpu type exists
+    if ($null -eq $script:HasNvidia -and $null -eq $script:HasAmd) {
+        Update-GpuTypes
+    }
+
+    $allValues = @()
+
+    # 2. NVIDIA Collection
+    if ($script:HasNvidia) {
+        # Using nounits returns a clean integer (e.g., "15")
+        $nvOut = nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>$null
+        if ($nvOut) {
+            foreach ($line in $nvOut) {
+                $cleanLine = $line.Trim()
+                if ($cleanLine -match '^\d+$') {
+                    $allValues += [int]$cleanLine
+                }
+            }
+        }
+    }
+
+    # 3. AMD Collection (Using the CSV flag you discovered)
+    if ($script:HasAmd) {
+        # We query the CSV format. The columns are: device, GPU use (%), VRAM Total...
+        # The index for 'GPU use (%)' is 1.
+        $amdOut = rocm-smi --showuse --csv 2>$null
+        if ($amdOut) {
+            foreach ($line in $amdOut) {
+                # Split the CSV line by comma
+                $cols = $line.Split(',')
+                # Check if the second column is a valid number
+                if ($cols.Count -gt 1 -and $cols[1] -match '^\d+$') {
+                    $allValues += [int]$cols[1]
+                }
+            }
+        }
+    }
+
+    # 4. Final Calculation
+    if ($allValues.Count -gt 0) {
+        # Return the highest value found in the array
+        return ($allValues | Measure-Object -Maximum).Maximum
+    } else {
+        # Return 0 if no GPUs were detected or no data was returned
+        return 0
+    }
+}
+
 # --- Disk: SAFE - uses LogicalDisk counters (no spin-up risk) ---
 function Get-DiskIoKBps {
     try {
@@ -1615,6 +1686,7 @@ $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:g_lastElapsedSeconds = 0.0
 
 $script:g_cpuHistory = New-Object 'System.Collections.Queue' $script:g_maxSamples
+$script:g_gpuHistory = New-Object 'System.Collections.Queue' $script:g_maxSamples
 $script:g_diskHistory = New-Object 'System.Collections.Queue' $script:g_maxSamples
 $script:g_netHistory = New-Object 'System.Collections.Queue' $script:g_maxSamples
 $script:g_audioHistory = New-Object 'System.Collections.Queue' $script:g_maxSamplesAudio
@@ -1815,6 +1887,8 @@ try {
 			# check maybe the user updated python in the meantime (this script is meant to run pretty much constantly)
 			$currentPythonPath = Resolve-PythonPath -PathPattern $script:Config['PythonPath']
 			
+			Update-GpuTypes
+			
 			$script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 		}
 		
@@ -1842,6 +1916,14 @@ try {
 			$script:g_cpuHistory.Enqueue($cpuAbove)
 			if ($script:g_cpuHistory.Count -gt $script:g_maxSamples) { 
 				$null = $script:g_cpuHistory.Dequeue()
+			}
+			
+			# GPU
+			$gpu = Get-MaxGpuUsage
+			$gpuAbove = $gpu -gt $script:Config['GpuThresholdPercent']
+			$script:g_gpuHistory.Enqueue($gpuAbove)
+			if ($script:g_gpuHistory.Count -gt $script:g_maxSamples) { 
+				$null = $script:g_gpuHistory.Dequeue()
 			}
 
 			# Disk
@@ -1894,6 +1976,23 @@ try {
 					} elseif ($script:Config['LogToConsoleVerbose']) {
 						Write-Host-Wrapper " " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
+					}
+					$hasSustainedActivity = $true
+				}
+			}
+			
+			# GPU: >= $script:Config['ActiveSamplesWithinInterval'] of last $script:g_maxSamples were above threshold
+			if ($script:g_gpuHistory.Count -ge $script:g_maxSamples) {
+				$activeCount = ($script:g_gpuHistory | Where-Object { $_ }).Count
+				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
+					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+						Write-Log " " "INFO"
+						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
+					} elseif ($script:Config['LogToConsoleVerbose']) {
+						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
@@ -1987,7 +2086,7 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$statusMessage = "CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Log $statusMessage "INFO"
 			} elseif ($script:Config['LogToConsoleVerbose']) {
 				$mouseLog = " "
@@ -1997,7 +2096,7 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$statusMessage = "CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Host-Wrapper $statusMessage "INFO"
 			}
 
