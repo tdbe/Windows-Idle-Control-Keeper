@@ -1170,7 +1170,7 @@ function Update-GpuTypes {
 		$script:HasNvidia = $nv
 	}
 	if( $am -ne $script:HasAmd ){
-		Write-Log "Nvidia gpu detected status changed: $($script:HasAmd) -> $am" "INFO"
+		Write-Log "AMD gpu detected status changed: $($script:HasAmd) -> $am" "INFO"
 		$script:HasAmd = $am
 	}
 }
@@ -1261,10 +1261,10 @@ function Get-DiskIoKBps {
 			$writeKBytes = $writeBytes / 1KB
             #$totalReadKBps += $readKBytes
             #$totalWriteKBps += $writeKBytes
-			if($readKBytes > $maxReadKBps) {
+			if($readKBytes -gt $maxReadKBps) {
 				$maxReadKBps = $readKBytes
 			}
-			if($writeKBytes > $maxWriteKBps) {
+			if($writeKBytes -gt $maxWriteKBps) {
 				$maxWriteKBps = $writeKBytes
 			}
         }
@@ -1749,8 +1749,10 @@ try {
 		}
 		
 		$script:g_nextFileSettingsPollSeconds = $script:g_nextFileSettingsPollSeconds - $deltaTimeSeconds
+		$checkedSettings = $false
 		if ($script:g_nextFileSettingsPollSeconds -le 0 -and $script:Config['FileSettingsPollIntervalMinutes'] -ne 0.0) {
 			Update-ConfigFromSettingsFile
+			$checkedSettings = $true
 			$script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollIntervalMinutes'] * 60
 			
 			$flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
@@ -2022,9 +2024,13 @@ try {
 				$activeCount = ($script:g_netHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+						Write-Log " " "INFO"
 						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
+						Write-Host-Wrapper " " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2078,7 +2084,7 @@ try {
 			
 			
 			# Log to file sometimes, and to console some other times
-			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSeconds'])) {
+			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSeconds']) -or $checkedSettings -eq $true) {
 				$mouseLog = " "
 				if (Test-IsInteractiveSession) {
 					#$mouseLog = "MouseDelta: $([math]::Round($mouseDelta,1)) px"
