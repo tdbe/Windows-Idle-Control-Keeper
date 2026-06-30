@@ -2084,7 +2084,8 @@ try {
 			
 			
 			# Log to file sometimes, and to console some other times
-			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSeconds']) -or $checkedSettings -eq $true) {
+			# -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSeconds']) 
+			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or $checkedSettings -eq $true) {
 				$mouseLog = " "
 				if (Test-IsInteractiveSession) {
 					#$mouseLog = "MouseDelta: $([math]::Round($mouseDelta,1)) px"
