@@ -95,6 +95,14 @@ DiskBlacklistDrives:@("E", "F")
 #~*------------ Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them. Keep in mind the NetworkThresholdKBps setting. (default: @("E", "F"))
 #~*--------------------------------------------------------------------------------------------------#
 
+SleepWhenBatteryIsBelowLevel:10
+#~*------------ If you don't have a battery, it will count the battery level as always at 100. So 0 means disabled (can't be less than 0). (default: 0)
+#~*--------------------------------------------------------------------------------------------------#
+
+HibernateWhenBatteryIsBelowLevel:0
+#~*------------ If you don't have a battery, it will count the battery level as always at 100. So 0 means disabled (can't be less than 0). (default: 0)
+#~*--------------------------------------------------------------------------------------------------#
+
 Settings_File_Windows_Idle_Control_Keeper_txt:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
 #~*------------ These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. The path should be accessible by all users. (default:"C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
 #~*--------------------------------------------------------------------------------------------------#
@@ -137,6 +145,10 @@ LogToConsoleVerbose:$true
 
 SleepAbortWindowCountdownSeconds:60 
 #~*------------ Seconds to show the sleep abort dialog before triggering sleep. (default: 60)
+#~*--------------------------------------------------------------------------------------------------#
+
+CriticalBatteryAbortWindowCountdownSeconds:60 
+#~*------------ This should be short so the computer doesn't drain while waiting on the message. Seconds to show the sleep or hibernate abort dialog before triggering sleep or hibernate. (default: 60)
 #~*--------------------------------------------------------------------------------------------------#
 
 SettingsPollIntervalMinutes:1 

@@ -17,7 +17,8 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 - Does not require administrator permission.
 - Works even if windows is locked. 
 - Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to monitor your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
-- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
+- Shows warning / abort window for AbortWindowCountdownSeconds (and CriticalBatteryAbortWindowCountdownSeconds) before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
+- Also provides its own options to sleep or hibernate when below specific battery levels (if there is a battery): SleepWhenBatteryIsBelowLevel, HibernateWhenBatteryIsBelowLevel.
 - Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 - Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
 - Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, GPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
@@ -42,6 +43,7 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 [2026-04-30 00:11:58] [INFO] ~*------- W.I.C.K. started. -------
 [2026-04-30 00:11:58] [INFO] Log path: C:\Commands_And_Logs\Windows_Idle_Control_Keeper.log
 [2026-04-30 00:11:58] [INFO] Settings path: C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt
+[2026-04-30 00:11:58] [INFO] System plugged in: true, system battery level: 27
 [2026-04-30 00:11:58] [INFO] You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): 30 min and 60 min. (We check to update this value every: SettingsPollIntervalMinutes: 1 min.)
 [2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 were sleeping or somehow lagging a lot, Resetting idle counter.

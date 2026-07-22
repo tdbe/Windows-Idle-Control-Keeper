@@ -26,7 +26,8 @@
 	- Does not require administrator permission.
 	- Works even if windows is locked. 
 	- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to monitor your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
-	- Shows warning / abort window for AbortWindowCountdownSeconds before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
+	- Shows warning / abort window for AbortWindowCountdownSeconds (and CriticalBatteryAbortWindowCountdownSeconds) before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
+	- Also provides its own options to sleep or hibernate when below specific battery levels (if there is a battery): SleepWhenBatteryIsBelowLevel, HibernateWhenBatteryIsBelowLevel. A self-dismissing message is shown to abort if session is interactive (CriticalBatteryAbortWindowCountdownSeconds).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
 	- Also can read from Settings_File_Windows_Idle_Control_Keeper_txt. So you can pause/resume, or tweak settings, while the script is running (every FileSettingsPollIntervalMinutes) (there's a flag: -IgnoreTheSettingsFile).
 	- Determines idle by accumulating sustained activity event samples, of configurable frequency & amplitude, over certain timeframes (and uses delta time), based on: if there's CPU, GPU, Network, sorage (without waking sleeping hard disks), audio spikes, and input activity.
@@ -217,9 +218,14 @@
   How much idle time must pass before we declare the system idle as far as this script is concerned, and send an idle event to the windows Event Viewer's Application Log (regardless of when the display is turned off or screensaver turns on or anything else). (default: 60)
 
 .PARAMETER DiskBlacklistDrives
-  Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them.  
-  Keep in mind the NetworkThresholdKBps setting.  
+  Allows blacklist for logical drives e.g. `"L", "A", "N"` - drives that have activity but you consider passive and you're okay sleeping on them. Keep in mind the NetworkThresholdKBps setting.  
   (default: @("E", "F"))
+  
+.PARAMETER SleepWhenBatteryIsBelowLevel
+  If you don't have a battery, it will count the battery level as always at 100. So 0 means disabled (can't be less than 0). (default: 0)
+
+.PARAMETER HibernateWhenBatteryIsBelowLevel
+  If you don't have a battery, it will count the battery level as always at 100. So 0 means disabled (can't be less than 0). (default: 0)
   
 .PARAMETER Settings_File_Windows_Idle_Control_Keeper_txt
   These settings can be edited while the script is running and the script will read them every FileSettingsPollIntervalMinutes. The path should be accessible by all users. (default: "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt")
@@ -256,7 +262,10 @@
   Whether to log to the console (not log file) as often as there is an event in the constant loop. (default: true)
 
 .PARAMETER SleepAbortWindowCountdownSeconds
-  Seconds to show the sleep abort dialog before triggering sleep. (default: 60)
+  Seconds to show the sleep or hibernate abort dialog before triggering sleep or hibernate. (default: 60)
+  
+.PARAMETER CriticalBatteryAbortWindowCountdownSeconds
+  This should be short so the computer doesn't drain while waiting on the message. Seconds to show the sleep or hibernate abort dialog before triggering sleep or hibernate. (default: 60)
   
 .PARAMETER SettingsPollIntervalMinutes
   Value should be lower than your e.g. sleep time (and in some sort of tandem with `FileSettingsPollIntervalMinutes`). Dynamically updates various script settings and timers, including checking the MutualExclusionFlagFile, or settings from your currently active windows power plan (plugged in or battery) to check sleep and also hibernate times. You can also use decimals e.g. '0.3' min. (default: 1)
@@ -295,6 +304,8 @@ param(
     [int]$IdleSecondsBeforeWeBroadcastSystemIdleEvent,
     [bool]$UseOnlyInputAndAudioEventsForDisplayOff,
     [string[]]$DiskBlacklistDrives,
+	[int]$SleepWhenBatteryIsBelowLevel,
+	[int]$HibernateWhenBatteryIsBelowLevel,
     [string]$Settings_File_Windows_Idle_Control_Keeper_txt,
     [string]$PycawAudioCheckerPath,
     [string]$PythonPath,
@@ -306,6 +317,7 @@ param(
     [int]$LogToFileIntervalSeconds,
     [bool]$LogToConsoleVerbose,
     [int]$SleepAbortWindowCountdownSeconds,
+    [int]$CriticalBatteryAbortWindowCountdownSeconds,
     [int]$SettingsPollIntervalMinutes,
     [int]$FileSettingsPollIntervalMinutes,
     [int]$FailsafeTimeMinutes
@@ -334,6 +346,8 @@ $script:Config = @{
     IdleSecondsBeforeWeBroadcastSystemIdleEvent 			= 60
     UseOnlyInputAndAudioEventsForDisplayOff      			= $false
     DiskBlacklistDrives                         			= @("E", "F")
+	SleepWhenBatteryIsBelowLevel							= 0
+	HibernateWhenBatteryIsBelowLevel						= 0
     Settings_File_Windows_Idle_Control_Keeper_txt 			= "C:\Commands_And_Logs\[Settings_File]_Windows_Idle_Control_Keeper.txt"
     PycawAudioCheckerPath                       			= "C:\Commands_And_Logs\Pycaw_check_if_audio_is_playing.py"
     PythonPath                                  			= "$env:USERPROFILE\AppData\Local\Programs\Python\Python{VERSION}\python.exe"
@@ -345,6 +359,7 @@ $script:Config = @{
     LogToFileIntervalSeconds                    			= 60
     LogToConsoleVerbose                         			= $true
     SleepAbortWindowCountdownSeconds            			= 60
+    CriticalBatteryAbortWindowCountdownSeconds            	= 60
     SettingsPollIntervalMinutes                 			= 1
     FileSettingsPollIntervalMinutes                 		= 1
     FailsafeTimeMinutes                         			= 0.98
@@ -401,7 +416,7 @@ function Update-ConfigFromSettingsFile {
 		return 
 	}
 	
-	Write-Log "||||~~~~ Checking config settings from file: $Path"
+	Write-Log "||~*----- Checking config settings from file: $Path"
 	if ($script:Config['IgnoreTheSettingsFile'] -eq $true) {
 		Write-Log "Skipping loading most settings from file because it's set to be overwritten by the CLI param version, because -IgnoreTheSettingsFile:$true"
 	} 
@@ -468,7 +483,7 @@ function Update-ConfigFromSettingsFile {
 					$val2Str = [string]$val
 					
 					if ($val1Str -ne $val2Str -and ($script:Config['IgnoreTheSettingsFile'] -eq $false -or $key -eq 'PauseScript')) {
-						Write-Log "||||>>~~~~>> Updated config from file: '$key': from $($script:Config[$key]) to $val"
+						Write-Log "||||~*--- Updated config from file: '$key': from $($script:Config[$key]) to $val"
 						$script:Config[$key] = $val
 					}
                 }
@@ -509,7 +524,7 @@ function LogSystemEvent_IdleOn {
     [CmdletBinding()]
     param()
 	
-	$script:g_isIdle = $true
+	$script:g_systemLoggedAsBeingIdle = $true
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
@@ -526,7 +541,7 @@ function LogSystemEvent_IdleOff {
     [CmdletBinding()]
     param()
 
-	$script:g_isIdle = $false
+	$script:g_systemLoggedAsBeingIdle = $false
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_idle_on" requires admin privileges
@@ -542,7 +557,7 @@ function LogSystemEvent_OnStart {
     [CmdletBinding()]
     param()
 	
-	$script:g_isIdle = $true
+	$script:g_systemLoggedAsBeingIdle = $true
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_on" requires admin privileges
@@ -558,7 +573,7 @@ function LogSystemEvent_OnEnd {
     [CmdletBinding()]
     param()
 	
-	$script:g_isIdle = $true
+	$script:g_systemLoggedAsBeingIdle = $true
 
     $LogName   = "Application" # writing to the "System" log requires admin privileges
     $Source    = "Application" # writing to your new custom source e.g. "wick_off" requires admin privileges
@@ -752,6 +767,16 @@ function IsComputerPluggedIn{
 		return ($battery).PowerOnLine
 	} else {
 		return $true
+	}
+}
+
+# returns 100 if not available. Note: you might want to also check if IsComputerPluggedIn but note that a laptop can discharge even while pllugged in in some cases.
+function GetBatteryLevel{
+	$battery = Get-WmiObject Win32_Battery -ErrorAction SilentlyContinue
+	if($battery) {
+		return ($battery).EstimatedChargeRemaining
+	} else {
+		return 100
 	}
 }
 
@@ -1595,13 +1620,15 @@ Write-Log " " "INFO"
 Write-Log "~*------- W.I.C.K. started. ---------" "INFO"
 Write-Log "~*------- PID: $PID ---------" "INFO"
 Write-Log "Log path: $($script:Config['LogPath'])" "INFO"
-Write-Log "Log path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])" "INFO"
+Write-Log "Settings path: $($script:Config['Settings_File_Windows_Idle_Control_Keeper_txt'])" "INFO"
 
 if ($script:Config['FileSettingsPollIntervalMinutes'] -ne 0.0) {
 	Update-ConfigFromSettingsFile
 }
 
 $script:g_isPluggedIn = IsComputerPluggedIn
+$script:g_batteryLevel = GetBatteryLevel
+Write-Log "System plugged in: $script:g_isPluggedIn, system battery level: $script:g_batteryLevel" "INFO"
 
 #Write-Log "  Dynamic idle timeout (checking the current active power plan value every: $($script:Config['SettingsPollIntervalMinutes']))"
 if ($script:Config['FollowTheSameSleepAndScreenTimeSettingAsYourPowerPlan']) {
@@ -1681,7 +1708,7 @@ $script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPe
 $script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamplesAudio']))# / $script:Config['SampleIntervalSec']))
 $script:g_idleSeconds = 0.0
 $script:g_idleSeconds_userOrAudioActivity = 0.0
-$script:g_isIdle = $false
+$script:g_systemLoggedAsBeingIdle = $false
 $script:g_sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:g_lastElapsedSeconds = 0.0
 
@@ -1744,7 +1771,7 @@ try {
 			$skipThisFrame = $true
 		}
 		
-		if ($script:g_idleSeconds -gt $script:Config['IdleSecondsBeforeWeBroadcastSystemIdleEvent'] -and $script:g_isIdle -eq $false) {
+		if ($script:g_idleSeconds -gt $script:Config['IdleSecondsBeforeWeBroadcastSystemIdleEvent'] -and $script:g_systemLoggedAsBeingIdle -eq $false) {
 			LogSystemEvent_IdleOn
 		}
 		
@@ -1897,7 +1924,7 @@ try {
 		if ($script:Config['PauseScript'] -eq $true) {
 			$script:g_idleSeconds = 0.0
 			$script:g_idleSeconds_userOrAudioActivity = 0.0
-			if ($script:g_isIdle -eq $true) {
+			if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 				LogSystemEvent_IdleOff
 			}
 			if ($script:g_PreventSleep_ES -eq $true -and $script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
@@ -2113,7 +2140,7 @@ try {
 
 			if ($hasSustainedActivity) {
 				$script:g_idleSeconds = 0.0
-				if ($script:g_isIdle -eq $true) {
+				if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 					LogSystemEvent_IdleOff
 				}
 				$script:g_cpuHistory.Clear()
@@ -2123,14 +2150,63 @@ try {
 			} else {
 				$script:g_idleSeconds += $deltaTimeSeconds
 			}
-
 			
 			$userActivity = $false
 			if ($inputBasedActivityThisFrame -or $audioBasedActivityThisFrame) {
 				$userActivity = $true
 				$script:g_idleSeconds_userOrAudioActivity = 0.0
+				if ($script:g_systemLoggedAsBeingIdle -eq $true) {
+					LogSystemEvent_IdleOff
+				}
 			} else {
 				$script:g_idleSeconds_userOrAudioActivity += $deltaTimeSeconds
+			}
+			
+			# Hibernate or sleep if applicable under a valid battery user set threshold.
+			$script:g_batteryLevel = GetBatteryLevel
+			# $script:g_isPluggedIn = IsComputerPluggedIn
+			if ($script:Config['HibernateWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $script:Config['HibernateWhenBatteryIsBelowLevel']) {
+				$abort = Show-AbortDialog -Seconds $CriticalBatteryAbortWindowCountdownSeconds -ActionName "hibernate"
+				$blb = $script:Config['HibernateWhenBatteryIsBelowLevel']
+				if ($abort) {
+					Write-Log "Battery (value: $script:g_batteryLevel) is below the HibernateWhenBatteryIsBelowLevel of $blb! Wanted to hibernate but user aborted!" "INFO"
+					
+					$script:g_idleSeconds = 0.0
+					$script:g_idleSeconds_userOrAudioActivity = 0.0
+					if ($script:g_systemLoggedAsBeingIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				} else {
+					Write-Host-Wrapper "Battery (value: $script:g_batteryLevel) is below the HibernateWhenBatteryIsBelowLevel of $blb! Hibernating!" "INFO"
+					Enter-HibernateState
+					
+					$script:g_idleSeconds = 0.0
+					$script:g_idleSeconds_userOrAudioActivity = 0.0
+					if ($script:g_systemLoggedAsBeingIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				}
+			} elseif ($script:Config['SleepWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $script:Config['SleepWhenBatteryIsBelowLevel']) {
+				$abort = Show-AbortDialog -Seconds $CriticalBatteryAbortWindowCountdownSeconds -ActionName "sleep"
+				$blb = $script:Config['SleepWhenBatteryIsBelowLevel']
+				if ($abort) {
+					Write-Log "Battery (value: $script:g_batteryLevel) is below the SleepWhenBatteryIsBelowLevel of $blb! Wanted to sleep but user aborted!" "INFO"
+					
+					$script:g_idleSeconds = 0.0
+					$script:g_idleSeconds_userOrAudioActivity = 0.0
+					if ($script:g_systemLoggedAsBeingIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				} else {
+					Write-Host-Wrapper "Battery (value: $script:g_batteryLevel) is below the SleepWhenBatteryIsBelowLevel of $blb! Sleeping!" "INFO"
+					Enter-SleepState
+					
+					$script:g_idleSeconds = 0.0
+					$script:g_idleSeconds_userOrAudioActivity = 0.0
+					if ($script:g_systemLoggedAsBeingIdle -eq $true) {
+						LogSystemEvent_IdleOff
+					}
+				}
 			}
 
 			if($inputBasedActivityThisFrame -eq $false) {
@@ -2180,7 +2256,7 @@ try {
 							Write-Log "User aborted sleep." "INFO"
 							$script:g_idleSeconds = 0.0
 							$script:g_idleSeconds_userOrAudioActivity = 0.0
-							if ($script:g_isIdle -eq $true) {
+							if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
 						} else {
@@ -2193,7 +2269,7 @@ try {
 							Enter-SleepState
 							$script:g_idleSeconds = 0.0
 							$script:g_idleSeconds_userOrAudioActivity = 0.0
-							if ($script:g_isIdle -eq $true) {
+							if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
 							Write-Log "System be woke. Resuming monitoring." "INFO"
@@ -2209,7 +2285,7 @@ try {
 							Write-Log "User aborted hibernate." "INFO"
 							$script:g_idleSeconds = 0.0
 							$script:g_idleSeconds_userOrAudioActivity = 0.0
-							if ($script:g_isIdle -eq $true) {
+							if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
 						} else {
@@ -2222,7 +2298,7 @@ try {
 							Enter-HibernateState
 							$script:g_idleSeconds = 0.0
 							$script:g_idleSeconds_userOrAudioActivity = 0.0
-							if ($script:g_isIdle -eq $true) {
+							if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
 							Write-Log "System be woke. Resuming monitoring." "INFO"
@@ -2246,7 +2322,7 @@ try {
 		$script:g_PreventSleep_ES = $false
 		[WindowsSleepWrangler]::StopIgnoringIdleTimers()
 	}
-	if ($script:g_isIdle -eq $true) {
+	if ($script:g_systemLoggedAsBeingIdle -eq $true) {
 		LogSystemEvent_IdleOff
 	}
 	
