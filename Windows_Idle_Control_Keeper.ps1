@@ -2057,9 +2057,13 @@ try {
 			}
 
 			$secondsSinceLastInputInfo = Get-SecondsSinceLastInputInfo
-			if ($secondsSinceLastInputInfo -le $script:g_idleSeconds) {
+			$idleSecOrUserSec = $script:g_idleSeconds
+			if ($script:Config['UseOnlyInputAndAudioEventsForDisplayOff'] -eq $true) {
+				$idleSecOrUserSec = $script:g_idleSeconds_userOrAudioActivity
+			}
+			if ($secondsSinceLastInputInfo -le $idleSecOrUserSec) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSeconds']) {
-					if($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']){
+					if($idleSecOrUserSec -ge $script:Config['LogToFileIntervalSeconds']){
 						Write-Log " " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
@@ -2175,6 +2179,7 @@ try {
 						if ($abort) {
 							Write-Log "User aborted sleep." "INFO"
 							$script:g_idleSeconds = 0.0
+							$script:g_idleSeconds_userOrAudioActivity = 0.0
 							if ($script:g_isIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
@@ -2187,6 +2192,7 @@ try {
 							
 							Enter-SleepState
 							$script:g_idleSeconds = 0.0
+							$script:g_idleSeconds_userOrAudioActivity = 0.0
 							if ($script:g_isIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
@@ -2202,6 +2208,7 @@ try {
 						if ($abort) {
 							Write-Log "User aborted hibernate." "INFO"
 							$script:g_idleSeconds = 0.0
+							$script:g_idleSeconds_userOrAudioActivity = 0.0
 							if ($script:g_isIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
@@ -2214,6 +2221,7 @@ try {
 							
 							Enter-HibernateState
 							$script:g_idleSeconds = 0.0
+							$script:g_idleSeconds_userOrAudioActivity = 0.0
 							if ($script:g_isIdle -eq $true) {
 								LogSystemEvent_IdleOff
 							}
