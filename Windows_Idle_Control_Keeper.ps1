@@ -55,24 +55,24 @@
 	[2026-04-30 00:11:58] [INFO] You set to use windows power plan's sleep and hiberante values (if sleep/hibernate are enabled on the system): 30 min and 60 min. (We check to update this value every: SettingsPollIntervalMinutes: 1 min.)
 	[2026-04-30 00:11:58] [INFO] It's been 171368.983134705 minute(s) since the last update, which means we
 	were sleeping or somehow lagging a lot, Resetting idle counter.
-	[2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 1.97975]][deltaTime: 1.81188]
-	[2026-04-30 00:15:49] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 131.58716][deltaTime: 1.79505]
-	[2026-04-30 00:18:03] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.36724][deltaTime: 1.80448]
+	[2026-04-30 00:13:38] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required). [idleSeconds: 1.97975]][deltaTime: 1.81188]
+	[2026-04-30 00:15:49] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required). [idleSeconds: 131.58716][deltaTime: 1.79505]
+	[2026-04-30 00:18:03] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required). [idleSeconds: 134.36724][deltaTime: 1.80448]
 	[2026-04-30 00:20:18] [INFO][IDLE BREAKER] Sustained audio playing for 5 samples. Resetting idle counter. [idleSeconds: 135.39535][deltaTime: 1.83311]
-	[2026-04-30 00:22:27] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 129.7384][deltaTime: 1.80238]
-	[2026-04-30 00:24:35] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 128.48579][deltaTime: 1.81196]
-	[2026-04-30 00:26:53] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.36093][deltaTime: 1.80977]
-	[2026-04-30 00:29:07] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.53758][deltaTime: 1.80943]
+	[2026-04-30 00:22:27] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required). [idleSeconds: 129.7384][deltaTime: 1.80238]
+	[2026-04-30 00:24:35] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required). [idleSeconds: 128.48579][deltaTime: 1.81196]
+	[2026-04-30 00:26:53] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required). [idleSeconds: 138.36093][deltaTime: 1.80977]
+	[2026-04-30 00:29:07] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required). [idleSeconds: 134.53758][deltaTime: 1.80943]
 	[2026-04-30 00:31:16] [INFO][IDLE BREAKER] Sustained audio playing for 5 samples. Resetting idle counter. [idleSeconds: 129.49264][deltaTime: 1.82225]
-	[2026-04-30 00:33:22] [INFO][IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required) for 6 sec. [idleSeconds: 126.15309][deltaTime: 1.80812]
-	[2026-04-30 00:35:41] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73624][deltaTime: 1.81147]
-	[2026-04-30 00:38:00] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 139.63062][deltaTime: 1.80641]
-	[2026-04-30 00:42:30] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 270.65825][deltaTime: 1.81357]
+	[2026-04-30 00:33:22] [INFO][IDLE BREAKER] Disk: 4/6 samples > 1250 KBps (>= 3 required). [idleSeconds: 126.15309][deltaTime: 1.80812]
+	[2026-04-30 00:35:41] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required). [idleSeconds: 138.73624][deltaTime: 1.81147]
+	[2026-04-30 00:38:00] [INFO][IDLE BREAKER] Network: 3/6 samples > 850 KBps (>= 3 required). [idleSeconds: 139.63062][deltaTime: 1.80641]
+	[2026-04-30 00:42:30] [INFO][IDLE BREAKER] Network: 5/6 samples > 850 KBps (>= 3 required). [idleSeconds: 270.65825][deltaTime: 1.81357]
 	[2026-04-30 00:44:38] [INFO][IDLE BREAKER] Mouse/touch/keyboard activity registered 1 seconds ago. Resetting idle counter. [idleSeconds: 128.70253][deltaTime: 1.81204]
-	[2026-04-30 00:46:52] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 134.8361][deltaTime: 1.80762]
-	[2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 146.67395][deltaTime: 1.81792]
-	[2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 141.39137][deltaTime: 1.81315]
-	[2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required) for 6 sec. [idleSeconds: 138.73501][deltaTime: 1.82582]
+	[2026-04-30 00:46:52] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required). [idleSeconds: 134.8361][deltaTime: 1.80762]
+	[2026-04-30 00:49:18] [INFO][IDLE BREAKER] Network: 4/6 samples > 850 KBps (>= 3 required). [idleSeconds: 146.67395][deltaTime: 1.81792]
+	[2026-04-30 00:51:39] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required). [idleSeconds: 141.39137][deltaTime: 1.81315]
+	[2026-04-30 00:53:57] [INFO][IDLE BREAKER] Network: 6/6 samples > 850 KBps (>= 3 required). [idleSeconds: 138.73501][deltaTime: 1.82582]
 	[2026-04-30 00:53:59] [INFO] CPU: 1 % | GPU: 6 % | Disk: 8279 KBps | Net: 1201 KBps | Input: 91 s ago | Idle: 0.0 min | (T Sleep: 30 min | T Hibernate: 60 min | T Display: 20.0 min | T ScreenSaver: 0.0 min | T Demand Win Lock: 15.0 min). [idleSeconds: 2.52849][deltaTime: 1.83315]
 	```
 
@@ -203,9 +203,9 @@
   Network I/O (KB/s) above this resets idle timer. Sums (download + upload) * all the non-virtual network interfaces. (default: 850)
 
 .PARAMETER ActiveSamplesWithinInterval
-  How many instances (seconds, but there can be lag) of activity must be detected within the last ActivityDetectionPeriodSeconds seconds for us to consider that activity an idle breaker. (default: 3)
+  How many instances (seconds, but there can be lag) of activity must be detected within the last ActivityDetectionPeriodSamples seconds for us to consider that activity an idle breaker. (default: 3)
 
-.PARAMETER ActivityDetectionPeriodSeconds
+.PARAMETER ActivityDetectionPeriodSamples
   Seconds window to check for sustained activity. (default: 6)
 
 .PARAMETER ActivityDetectionPeriodSamplesAudio
@@ -298,7 +298,7 @@ param(
     [int]$DiskThresholdKBps,
     [int]$NetworkThresholdKBps,
     [int]$ActiveSamplesWithinInterval,
-    [int]$ActivityDetectionPeriodSeconds,
+    [int]$ActivityDetectionPeriodSamples,
     [int]$ActivityDetectionPeriodSamplesAudio,
     [int]$LockPcAtThisIdleTimeMinutes,
     [int]$IdleSecondsBeforeWeBroadcastSystemIdleEvent,
@@ -340,7 +340,7 @@ $script:Config = @{
     DiskThresholdKBps                           			= 1250
     NetworkThresholdKBps                        			= 850
     ActiveSamplesWithinInterval                 			= 3
-    ActivityDetectionPeriodSeconds              			= 6
+    ActivityDetectionPeriodSamples              			= 6
     ActivityDetectionPeriodSamplesAudio         			= 5
     LockPcAtThisIdleTimeMinutes                 			= 0
     IdleSecondsBeforeWeBroadcastSystemIdleEvent 			= 60
@@ -1705,7 +1705,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 #$prevMouse = Get-MouseMovementPixels
 
 # Sliding windows for sustained detection
-$script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSeconds']))# / $script:Config['SampleIntervalSec']))
+$script:g_maxSamples = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamples']))# / $script:Config['SampleIntervalSec']))
 $script:g_maxSamplesAudio = [int]([math]::Ceiling($script:Config['ActivityDetectionPeriodSamplesAudio']))# / $script:Config['SampleIntervalSec']))
 $script:g_idleSeconds = 0.0
 $script:g_idleSeconds_userOrAudioActivity = 0.0
@@ -1806,9 +1806,9 @@ try {
 			}
 			
 			# Sliding windows for sustained detection
-			if($script:g_maxSamples -ne $script:Config['ActivityDetectionPeriodSeconds']) {
-				Write-Log "ActivityDetectionPeriodSeconds changed: $script:g_maxSamples to $($script:Config['ActivityDetectionPeriodSeconds'])." "INFO"
-				$script:g_maxSamples = $script:Config['ActivityDetectionPeriodSeconds']
+			if($script:g_maxSamples -ne $script:Config['ActivityDetectionPeriodSamples']) {
+				Write-Log "ActivityDetectionPeriodSamples changed: $script:g_maxSamples to $($script:Config['ActivityDetectionPeriodSamples'])." "INFO"
+				$script:g_maxSamples = $script:Config['ActivityDetectionPeriodSamples']
 			}
 			if($script:g_maxSamplesAudio -ne $script:Config['ActivityDetectionPeriodSamplesAudio']) {
 				Write-Log "ActivityDetectionPeriodSamplesAudio changed: $script:g_maxSamplesAudio to $($script:Config['ActivityDetectionPeriodSamplesAudio'])." "INFO"
@@ -2001,11 +2001,11 @@ try {
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
 						Write-Log " " "INFO"
-						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
 						Write-Host-Wrapper " " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
@@ -2018,11 +2018,11 @@ try {
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
 						Write-Log " " "INFO"
-						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
 						Write-Host-Wrapper " " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
@@ -2035,11 +2035,11 @@ try {
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
 						Write-Log " " "INFO"
-						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec.[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required).[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
 						Write-Host-Wrapper " " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
@@ -2053,11 +2053,11 @@ try {
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
 						Write-Log " " "INFO"
-						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
 						Write-Host-Wrapper " " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required) for $($script:Config['ActivityDetectionPeriodSeconds']) sec. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " " "INFO"
 					}
 					$hasSustainedActivity = $true
@@ -2090,7 +2090,7 @@ try {
 				$idleSecOrUserSec = $script:g_idleSeconds_userOrAudioActivity
 			}
 			if ($secondsSinceLastInputInfo -le $idleSecOrUserSec) {
-				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSeconds']) {
+				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamples']) {
 					if($idleSecOrUserSec -ge $script:Config['LogToFileIntervalSeconds']){
 						Write-Log " " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
@@ -2116,7 +2116,7 @@ try {
 			
 			
 			# Log to file sometimes, and to console some other times
-			# -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSeconds']) 
+			# -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSamples']) 
 			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or $checkedSettings -eq $true) {
 				$mouseLog = " "
 				if (Test-IsInteractiveSession) {

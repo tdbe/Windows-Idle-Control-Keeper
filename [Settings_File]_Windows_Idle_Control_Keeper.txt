@@ -72,10 +72,10 @@ NetworkThresholdKBps:850
 #~*--------------------------------------------------------------------------------------------------#
 
 ActiveSamplesWithinInterval:3 
-#~*------------ How many threshold-breaking instances of activity must be detected within the last $ActivityDetectionPeriodSeconds seconds for us to consider that activity an idle breaker. (default: 3)
+#~*------------ How many threshold-breaking instances of activity must be detected within the last $ActivityDetectionPeriodSamples seconds for us to consider that activity an idle breaker. (default: 3)
 #~*--------------------------------------------------------------------------------------------------#
 
-ActivityDetectionPeriodSeconds:6 
+ActivityDetectionPeriodSamples:6 
 #~*------------ Seconds window to check for sustained activity. (default: 6)
 #~*--------------------------------------------------------------------------------------------------#
 
