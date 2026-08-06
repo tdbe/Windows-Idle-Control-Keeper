@@ -261,7 +261,7 @@
 .PARAMETER LogToConsoleVerbose
   Whether to log to the console (not log file) as often as there is an event in the constant loop. (default: true)
 
-.PARAMETER SleepAbortWindowCountdownSeconds
+.PARAMETER AbortWindowCountdownSeconds
   Seconds to show the sleep or hibernate abort dialog before triggering sleep or hibernate. (default: 60)
   
 .PARAMETER CriticalBatteryAbortWindowCountdownSeconds
@@ -316,7 +316,7 @@ param(
     [int]$LogMaxSizeMB,
     [int]$LogToFileIntervalSeconds,
     [bool]$LogToConsoleVerbose,
-    [int]$SleepAbortWindowCountdownSeconds,
+    [int]$AbortWindowCountdownSeconds,
     [int]$CriticalBatteryAbortWindowCountdownSeconds,
     [int]$SettingsPollIntervalMinutes,
     [int]$FileSettingsPollIntervalMinutes,
@@ -358,7 +358,7 @@ $script:Config = @{
     LogMaxSizeMB                                			= 10
     LogToFileIntervalSeconds                    			= 60
     LogToConsoleVerbose                         			= $true
-    SleepAbortWindowCountdownSeconds            			= 60
+    AbortWindowCountdownSeconds            					= 60
     CriticalBatteryAbortWindowCountdownSeconds            	= 60
     SettingsPollIntervalMinutes                 			= 1
     FileSettingsPollIntervalMinutes                 		= 1
@@ -1486,7 +1486,8 @@ function Show-AbortDialog {
     [CmdletBinding()]
     param(
         [int]$Seconds,
-        [string]$actionName
+        [string]$ActionName,
+		[string]$Message
     )
 
     if (-not (Test-IsInteractiveSession)) {
@@ -1497,10 +1498,10 @@ function Show-AbortDialog {
     # Ensure timeout is valid (0 means wait forever)
     if ($Seconds -le 0) { $Seconds = 10 }
 
-    $title = "System Idle Sleep Warning"
-    $msg = "Your PC is idle for $script:g_CurrentSleepIdleTimeMinutes minutes.`n`n" +
-           "It will $actionName in $Seconds seconds.`n`n" +
-           "Press Yes to abort."
+    $title = "System $actionName Warning"
+    $msg = "$Message`n`n" +
+           "System will $actionName in $Seconds seconds.`n`n" +
+           "Abort?"
 
     $wsh = New-Object -ComObject WScript.Shell
     # Cast to [int] to guarantee COM respects the timeout
@@ -2164,12 +2165,25 @@ try {
 			
 			# Hibernate or sleep if applicable under a valid battery user set threshold.
 			$script:g_batteryLevel = GetBatteryLevel
-			# $script:g_isPluggedIn = IsComputerPluggedIn
-			if ($script:Config['HibernateWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $script:Config['HibernateWhenBatteryIsBelowLevel']) {
-				$abort = Show-AbortDialog -Seconds $CriticalBatteryAbortWindowCountdownSeconds -ActionName "hibernate"
-				$blb = $script:Config['HibernateWhenBatteryIsBelowLevel']
+			$script:g_isPluggedIn = IsComputerPluggedIn
+			$forceHibernateTime = $script:Config['HibernateWhenBatteryIsBelowLevel']
+			if($script:g_isPluggedIn -eq $true) {
+				# NOTE: This is an important hack to rely on because laptops nowadays can have an alternative (slower) usb charger, which can cause the laptop battery to drain even if and while it's plugged in.
+				$forceHibernateTime = $script:Config['HibernateWhenBatteryIsBelowLevel'] / 2.0
+			}
+			$forceSleepTime = $script:Config['SleepWhenBatteryIsBelowLevel']
+			if($script:g_isPluggedIn -eq $true) {
+				# NOTE: This is an important hack to rely on because laptops nowadays can have an alternative (slower) usb charger, which can cause the laptop battery to drain even if and while it's plugged in.
+				$forceSleepTime = $script:Config['SleepWhenBatteryIsBelowLevel'] / 2.0
+			}
+			
+			if ($script:Config['HibernateWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $forceHibernateTime) {
+				$blb = $forceHibernateTime
+				$batteryMessage = "Battery: $script:g_batteryLevel is below the HibernateWhenBatteryIsBelowLevel of $blb!"
+				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "hibernate" -Message $batteryMessage
+				
 				if ($abort) {
-					Write-Log "Battery (value: $script:g_batteryLevel) is below the HibernateWhenBatteryIsBelowLevel of $blb! Wanted to hibernate but user aborted!" "INFO"
+					Write-Log "$batteryMessage Wanted to hibernate but user aborted!" "INFO"
 					
 					$script:g_idleSeconds = 0.0
 					$script:g_idleSeconds_userOrAudioActivity = 0.0
@@ -2177,7 +2191,7 @@ try {
 						LogSystemEvent_IdleOff
 					}
 				} else {
-					Write-Host-Wrapper "Battery (value: $script:g_batteryLevel) is below the HibernateWhenBatteryIsBelowLevel of $blb! Hibernating!" "INFO"
+					Write-Host-Wrapper "$batteryMessage Hibernating!" "INFO"
 					Enter-HibernateState
 					
 					$script:g_idleSeconds = 0.0
@@ -2186,11 +2200,13 @@ try {
 						LogSystemEvent_IdleOff
 					}
 				}
-			} elseif ($script:Config['SleepWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $script:Config['SleepWhenBatteryIsBelowLevel']) {
-				$abort = Show-AbortDialog -Seconds $CriticalBatteryAbortWindowCountdownSeconds -ActionName "sleep"
-				$blb = $script:Config['SleepWhenBatteryIsBelowLevel']
+			} elseif ($script:Config['SleepWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $forceSleepTime) {
+				$blb = $forceSleepTime
+				$batteryMessage = "Battery: $script:g_batteryLevel is below the SleepWhenBatteryIsBelowLevel of $blb!"
+				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "sleep" -Message $batteryMessage
+				
 				if ($abort) {
-					Write-Log "Battery (value: $script:g_batteryLevel) is below the SleepWhenBatteryIsBelowLevel of $blb! Wanted to sleep but user aborted!" "INFO"
+					Write-Log "$batteryMessage Wanted to sleep but user aborted!" "INFO"
 					
 					$script:g_idleSeconds = 0.0
 					$script:g_idleSeconds_userOrAudioActivity = 0.0
@@ -2198,7 +2214,7 @@ try {
 						LogSystemEvent_IdleOff
 					}
 				} else {
-					Write-Host-Wrapper "Battery (value: $script:g_batteryLevel) is below the SleepWhenBatteryIsBelowLevel of $blb! Sleeping!" "INFO"
+					Write-Host-Wrapper "$batteryMessage Sleeping!" "INFO"
 					Enter-SleepState
 					
 					$script:g_idleSeconds = 0.0
@@ -2250,7 +2266,7 @@ try {
 				# Check if ready to sleep
 				if ($script:g_CurrentSleepIdleTimeMinutes -gt 0.0 -and $script:g_idleSeconds -ge ($script:g_CurrentSleepIdleTimeMinutes * 60)) {
 					if($script:sleepOrHibernatePreventionFlagExists -eq $false) {
-						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "sleep"
+						$abort = Show-AbortDialog -Seconds $script:Config['AbortWindowCountdownSeconds'] -ActionName "sleep" -Message "Your PC has been idle for $script:g_CurrentSleepIdleTimeMinutes minutes."
 
 						if ($abort) {
 							Write-Log "User aborted sleep." "INFO"
@@ -2279,7 +2295,7 @@ try {
 				# Check if ready to hibernate
 				if ($script:g_CurrentHibernateIdleTimeMinutes -gt 0.0 -and $script:g_idleSeconds -ge ($script:g_CurrentHibernateIdleTimeMinutes * 60)) {
 					if($script:sleepOrHibernatePreventionFlagExists -eq $false) {
-						$abort = Show-AbortDialog -Seconds $AbortWindowCountdownSeconds -ActionName "hibernate"
+						$abort = Show-AbortDialog -Seconds $script:Config['AbortWindowCountdownSeconds'] -ActionName "hibernate" -Message "Your PC has been idle for $script:g_CurrentSleepIdleTimeMinutes minutes."
 
 						if ($abort) {
 							Write-Log "User aborted hibernate." "INFO"
