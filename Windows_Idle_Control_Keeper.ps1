@@ -1487,9 +1487,15 @@ function Show-AbortDialog {
     param(
         [int]$Seconds,
         [string]$ActionName,
-		[string]$Message
+		[string]$Message,
+		[bool]$PlaySound
     )
-
+	
+	if($PlaySound -eq $true) {
+		# Play a sound because this is an important event you can't sleep on
+		(New-Object System.Media.SoundPlayer "$env:windir\Media\Ring06.wav").Play()
+	}
+	
     if (-not (Test-IsInteractiveSession)) {
         Write-Log "Non-interactive session - skipping message box." "DEBUG"
         return $false
@@ -2180,7 +2186,7 @@ try {
 			if ($script:Config['HibernateWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $forceHibernateTime) {
 				$blb = $forceHibernateTime
 				$batteryMessage = "Battery: $script:g_batteryLevel is below the HibernateWhenBatteryIsBelowLevel of $blb!"
-				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "hibernate" -Message $batteryMessage
+				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "hibernate" -Message $batteryMessage -PlaySound $true
 				
 				if ($abort) {
 					Write-Log "$batteryMessage Wanted to hibernate but user aborted!" "INFO"
@@ -2203,7 +2209,7 @@ try {
 			} elseif ($script:Config['SleepWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $forceSleepTime) {
 				$blb = $forceSleepTime
 				$batteryMessage = "Battery: $script:g_batteryLevel is below the SleepWhenBatteryIsBelowLevel of $blb!"
-				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "sleep" -Message $batteryMessage
+				$abort = Show-AbortDialog -Seconds $script:Config['CriticalBatteryAbortWindowCountdownSeconds'] -ActionName "sleep" -Message $batteryMessage -PlaySound $true
 				
 				if ($abort) {
 					Write-Log "$batteryMessage Wanted to sleep but user aborted!" "INFO"
