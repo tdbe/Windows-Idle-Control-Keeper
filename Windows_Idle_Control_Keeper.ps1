@@ -495,7 +495,7 @@ function Update-ConfigFromSettingsFile {
     }
 }
 # ───────────────────────────────────────────────────────────────────────────────
-# ^ AI boilerplate to read from settings file as well as from cli params, finished. Real script starts now:
+# ^ AI boilerplate to read from settings file as well as from cli params. Real script starts now:
 # ───────────────────────────────────────────────────────────────────────────────
 
 #[int]$script:Config['SampleIntervalSec'] = 1
@@ -515,6 +515,7 @@ $script:g_myUnixTimeEpochStart = Get-Date '2026-01-01'
 $script:g_minutesPassedLastFrame = 0
 
 $script:StartTime = Get-Date
+$script:g_isInteractiveSession = $false
 
 $script:sleepOrHibernatePreventionFlagExists = $false
 
@@ -608,7 +609,7 @@ function Write-Log {
     if (-not $script:Config['LogPath']) { return }
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "[$timestamp][PID: $PID] [$Level] $Message"
+    $logEntry = "[$timestamp][PID: $PID][User: $([Environment]::UserDomainName)][Interactive user: $script:g_isInteractiveSession] [$Level] $Message"
 
 	if($logEntry -eq "WARN") {
 		Write-Warning "$logEntry"
@@ -641,7 +642,7 @@ function Write-Host-Wrapper {
     
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "[$timestamp] [$Level] $Message"
+    $logEntry = "[$timestamp][PID: $PID][User: $([Environment]::UserDomainName)][Interactive user: $script:g_isInteractiveSession] [$Level] $Message"
 
     Write-Host "[(not logged)] $logEntry"
 }
@@ -817,8 +818,9 @@ function Turn-Display-Off {
 	}
 	
 	$script:g_DisplayTurnedOff = $true
+	Write-Log " ~~~~~~~~~~*---------- " "Info"
 	Write-Log "Turning off Display. g_DisplayTurnedOff: $script:g_DisplayTurnedOff" "Info"
-	Write-Log " " "Info"
+	Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	[Display]::TurnOff()
 }
 
@@ -841,11 +843,13 @@ function Lock-PC {
 	if (-not $result) {
 		$script:g_PcLockedOnDemand = $false
 		$err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+		Write-Log " ~~~~~~~~~~*---------- " "Info"
 		Write-Log "Failed to lock workstation." "ERROR"
-		Write-Log " " "Info"
+		Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	} else {
+		Write-Log " ~~~~~~~~~~*---------- " "Info"
 		Write-Log "Locked PC. g_PcLockedOnDemand: $script:g_PcLockedOnDemand" "INFO"
-		Write-Log " " "Info"
+		Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	}
 }
 
@@ -872,8 +876,9 @@ if (-not ($script:g_typeName -as [type])) {
 }
 
 function Start-Screensaver {
+	Write-Log " ~~~~~~~~~~*---------- " "Info"
 	Write-Log "Starting Screen Saver (if it exists)." "Info"
-	Write-Log " " "Info"
+	Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	$script:g_ScreenSaverStarted = $true
     [Screensaver]::Trigger()
 }
@@ -1083,13 +1088,16 @@ function Test-IsInteractiveSession {
     try {
 		$isInteractive = [System.Environment]::UserInteractive
 		#Write-Log "interactive???? $isInteractive" "INFO"
+		$script:g_isInteractiveSession = $isInteractive
         return $isInteractive
     }
     catch {
 		Write-Log "Could not query System.Environment::UserInteractive" "ERROR"
+		$script:g_isInteractiveSession = $false
         return $false
     }
 }
+Test-IsInteractiveSession
 
 # --- Detect if session is unlocked, without admin ---
 function Test-IsSessionUnlocked {
@@ -1118,23 +1126,28 @@ if (-not ($script:g_typeName -as [type])) {
 
 # --- Sleep API ---
 function Enter-SleepState {
+	Write-Log " ~~~~~~~~~~*---------- " "Info"
 	Write-Log "Starting Sleep." "INFO"
-	Write-Log " " "INFO"
+	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
     $result = [PowerManagement]::SetSuspendState($false, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+		Write-Log " ~~~~~~~~~~*---------- " "Info"
         Write-Log "Sleep failed! Win32 error: $err" "ERROR"
-        Write-Log " " "ERROR"
+        Write-Log " ~~~~~~~~~~~*--------- " "Info"
     }
 }
 
 function Enter-HibernateState {
+	Write-Log " ~~~~~~~~~~*---------- " "Info"
 	Write-Log "Starting Hibernate." "INFO"
-	Write-Log " " "INFO"
+	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
     $result = [PowerManagement]::SetSuspendState($true, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+		Write-Log " ~~~~~~~~~~*---------- " "Info"
         Write-Log "Hibernate failed! Win32 error: $err" "ERROR"
+		Write-Log " ~~~~~~~~~~~*--------- " "Info"
     }
 }
 
@@ -1368,9 +1381,8 @@ if (-not ($script:g_typeName -as [type])) {
 
 #this is better than the `Get-MouseMovementPixels` because it tests for any key events or touchscreen in addition to mouse
 #GetLastInputInfo tells you exactly when the last keyboard/mouse/touch event happened
-function Get-SecondsSinceLastInputInfo {
-	$retIsInteractiveSession = Test-IsInteractiveSession
-    if (-not $retIsInteractiveSession) {
+function Get-SecondsOrNullSinceLastInputInfo {
+    if ((Test-IsInteractiveSession) -eq $false) {
         #Write-Log "Mouse check skipped because non-interactive session." "DEBUG"
         return $null
     }
@@ -1387,8 +1399,7 @@ function Get-SecondsSinceLastInputInfo {
 
 # --- Mouse movement check (interactive only) ---
 function Get-MouseMovementPixels {
-	$retIsInteractiveSession = Test-IsInteractiveSession
-    if (-not $retIsInteractiveSession) {
+    if ((Test-IsInteractiveSession) -eq $false) {
         #Write-Log "Mouse check skipped because non-interactive session." "DEBUG"
         return [PSCustomObject]@{ X = 0; Y = 0 }
     }
@@ -1707,7 +1718,7 @@ if ($script:Config['PreventAndReplaceWindowsAutoSleep']) {
 #catch {
 #    Write-Log "Failed to load WinForms: $_" "WARN"
 #}
-# Get initial mouse position, replaced with Get-SecondsSinceLastInputInfo
+# Get initial mouse position, replaced with Get-SecondsOrNullSinceLastInputInfo
 #$prevMouse = Get-MouseMovementPixels
 
 # Sliding windows for sustained detection
@@ -1731,7 +1742,9 @@ $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollInterval
 Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']
 $flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
+	Write-Log " ~~~~~~~~~~*---------- " "INFO"
 	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file or folder exists: ($flagFile)" "INFO"
+	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 }
 
 if ($script:Config['PauseScript'] -eq $true) {
@@ -1797,7 +1810,9 @@ try {
 				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $dsfexistsOld to $script:sleepOrHibernatePreventionFlagExists" "INFO"
 			}
 			if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
+				Write-Log " ~~~~~~~~~~*---------- " "INFO"
 				Write-Log "We won't sleep or hibernate, because of this prevention file or folder $flagFile" "INFO"
+				Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 			}
 		}
 		
@@ -1991,7 +2006,7 @@ try {
 				$null = $script:g_audioHistory.Dequeue()
 			}
 
-			# Mouse, replaced with Get-SecondsSinceLastInputInfo
+			# Mouse, replaced with Get-SecondsOrNullSinceLastInputInfo
 			#$currMouse = Get-MouseMovementPixels
 			#$mouseDelta = [math]::Sqrt((($currMouse.X - $prevMouse.X) * ($currMouse.X - $prevMouse.X)) + 
 			#							(($currMouse.Y - $prevMouse.Y) * ($currMouse.Y - $prevMouse.Y)))
@@ -2006,13 +2021,13 @@ try {
 				$activeCount = ($script:g_cpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*--------- " "Info"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2023,13 +2038,13 @@ try {
 				$activeCount = ($script:g_gpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2040,13 +2055,13 @@ try {
 				$activeCount = ($script:g_diskHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required).[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2058,13 +2073,13 @@ try {
 				$activeCount = ($script:g_netHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2077,36 +2092,36 @@ try {
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
 				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 					$hasSustainedActivity = $true
 					$audioBasedActivityThisFrame = $true
 				}
 			}
 
-			$secondsSinceLastInputInfo = Get-SecondsSinceLastInputInfo
+			$secondsSinceLastInputInfo = Get-SecondsOrNullSinceLastInputInfo
 			$idleSecOrUserSec = $script:g_idleSeconds
 			if ($script:Config['UseOnlyInputAndAudioEventsForDisplayOff'] -eq $true) {
 				$idleSecOrUserSec = $script:g_idleSeconds_userOrAudioActivity
 			}
-			if ($secondsSinceLastInputInfo -le $idleSecOrUserSec) {
+			if ($secondsSinceLastInputInfo -ne $null -and $secondsSinceLastInputInfo -le $idleSecOrUserSec) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamples']) {
 					if($idleSecOrUserSec -ge $script:Config['LogToFileIntervalSeconds']){
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " " "INFO"
+						Write-Log " ~~~~~~~~~~~*----------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose'] -eq $true) {
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
 				#}
 				$hasSustainedActivity = $true
@@ -2125,7 +2140,7 @@ try {
 			# -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSamples']) 
 			if (($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $hasSustainedActivity -eq $true) -or $checkedSettings -eq $true) {
 				$mouseLog = " "
-				if (Test-IsInteractiveSession) {
+				if ((Test-IsInteractiveSession) -eq $true) {
 					#$mouseLog = "MouseDelta: $([math]::Round($mouseDelta,1)) px"
 					$mouseLog = "Input: $secondsSinceLastInputInfo s ago"
 				} else {
@@ -2135,7 +2150,7 @@ try {
 				Write-Log $statusMessage "INFO"
 			} elseif ($script:Config['LogToConsoleVerbose']) {
 				$mouseLog = " "
-				if (Test-IsInteractiveSession) {
+				if ((Test-IsInteractiveSession) -eq $true) {
 					#$mouseLog = "MouseDelta: $([math]::Round($mouseDelta,1)) px"
 					$mouseLog = "Input: $secondsSinceLastInputInfo s ago"
 				} else {
@@ -2349,6 +2364,6 @@ try {
 	}
 	
 	Write-Log "~~~~~~~~~ Exited the WICK script started at $script:StartTime PID: $PID ~~~~~~~*-" "INFO"
-	Write-Log " " "INFO"
+	Write-Log " ~~~~~~~~~~~~~~~~~~~~ " "INFO"
 	LogSystemEvent_OnEnd
 }
