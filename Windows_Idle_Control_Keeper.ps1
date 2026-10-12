@@ -818,7 +818,7 @@ function Turn-Display-Off {
 	}
 	
 	$script:g_DisplayTurnedOff = $true
-	Write-Log " ~~~~~~~~~~*---------- " "Info"
+	Write-Log " ~~~~~~~~~~*--------- " "Info"
 	Write-Log "Turning off Display. g_DisplayTurnedOff: $script:g_DisplayTurnedOff" "Info"
 	Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	[Display]::TurnOff()
@@ -843,11 +843,11 @@ function Lock-PC {
 	if (-not $result) {
 		$script:g_PcLockedOnDemand = $false
 		$err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-		Write-Log " ~~~~~~~~~~*---------- " "Info"
+		Write-Log " ~~~~~~~~~~*--------- " "Info"
 		Write-Log "Failed to lock workstation." "ERROR"
 		Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	} else {
-		Write-Log " ~~~~~~~~~~*---------- " "Info"
+		Write-Log " ~~~~~~~~~~*--------- " "Info"
 		Write-Log "Locked PC. g_PcLockedOnDemand: $script:g_PcLockedOnDemand" "INFO"
 		Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	}
@@ -876,7 +876,7 @@ if (-not ($script:g_typeName -as [type])) {
 }
 
 function Start-Screensaver {
-	Write-Log " ~~~~~~~~~~*---------- " "Info"
+	Write-Log " ~~~~~~~~~~*--------- " "Info"
 	Write-Log "Starting Screen Saver (if it exists)." "Info"
 	Write-Log " ~~~~~~~~~~~*--------- " "Info"
 	$script:g_ScreenSaverStarted = $true
@@ -1126,26 +1126,26 @@ if (-not ($script:g_typeName -as [type])) {
 
 # --- Sleep API ---
 function Enter-SleepState {
-	Write-Log " ~~~~~~~~~~*---------- " "Info"
+	Write-Log " ~~~~~~~~~~*--------- " "Info"
 	Write-Log "Starting Sleep." "INFO"
 	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
     $result = [PowerManagement]::SetSuspendState($false, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-		Write-Log " ~~~~~~~~~~*---------- " "Info"
+		Write-Log " ~~~~~~~~~~*--------- " "Info"
         Write-Log "Sleep failed! Win32 error: $err" "ERROR"
         Write-Log " ~~~~~~~~~~~*--------- " "Info"
     }
 }
 
 function Enter-HibernateState {
-	Write-Log " ~~~~~~~~~~*---------- " "Info"
+	Write-Log " ~~~~~~~~~~*--------- " "Info"
 	Write-Log "Starting Hibernate." "INFO"
 	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
     $result = [PowerManagement]::SetSuspendState($true, $true, $false)
     if (-not $result) {
         $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-		Write-Log " ~~~~~~~~~~*---------- " "Info"
+		Write-Log " ~~~~~~~~~~*--------- " "Info"
         Write-Log "Hibernate failed! Win32 error: $err" "ERROR"
 		Write-Log " ~~~~~~~~~~~*--------- " "Info"
     }
@@ -1742,7 +1742,7 @@ $script:g_nextFileSettingsPollSeconds = $script:Config['FileSettingsPollInterval
 Test-Path-Timeouted -timeoutMilliseconds 6000 -pathToTest $script:Config['DontSleepWhileThisFileExistsPath']
 $flagFile = $script:Config['DontSleepWhileThisFileExistsPath']
 if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
-	Write-Log " ~~~~~~~~~~*---------- " "INFO"
+	Write-Log " ~~~~~~~~~~*--------- " "INFO"
 	Write-Log "We won't sleep or hibernate, while the DontSleepWhileThisFileExistsPath flag file or folder exists: ($flagFile)" "INFO"
 	Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 }
@@ -1810,7 +1810,7 @@ try {
 				Write-Log "DontSleepWhileThisFileExistsPath file flag ($flagFile) went from $dsfexistsOld to $script:sleepOrHibernatePreventionFlagExists" "INFO"
 			}
 			if($script:sleepOrHibernatePreventionFlagExists -eq $true) {
-				Write-Log " ~~~~~~~~~~*---------- " "INFO"
+				Write-Log " ~~~~~~~~~~*--------- " "INFO"
 				Write-Log "We won't sleep or hibernate, because of this prevention file or folder $flagFile" "INFO"
 				Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 			}
@@ -2021,11 +2021,11 @@ try {
 				$activeCount = ($script:g_cpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*--------- " "Info"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
@@ -2038,11 +2038,11 @@ try {
 				$activeCount = ($script:g_gpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
@@ -2055,11 +2055,11 @@ try {
 				$activeCount = ($script:g_diskHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required).[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
@@ -2073,11 +2073,11 @@ try {
 				$activeCount = ($script:g_netHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
@@ -2092,11 +2092,11 @@ try {
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
 				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
 					}
@@ -2113,12 +2113,12 @@ try {
 			if ($secondsSinceLastInputInfo -ne $null -and $secondsSinceLastInputInfo -le $idleSecOrUserSec) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamples']) {
 					if($idleSecOrUserSec -ge $script:Config['LogToFileIntervalSeconds']){
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
+						Write-Log " ~~~~~~~~~~*--------- " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Log " ~~~~~~~~~~~*----------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose'] -eq $true) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+						Write-Host-Wrapper " ~~~~~~~~~~*--------- " "INFO"
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
 						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
 						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
@@ -2135,6 +2135,8 @@ try {
 				}
 			}
 			
+			$script:g_batteryLevel = GetBatteryLevel
+			$script:g_isPluggedIn = IsComputerPluggedIn
 			
 			# Log to file sometimes, and to console some other times
 			# -or ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds'] -and $script:g_nextSettingsPollSeconds -le $script:Config['ActivityDetectionPeriodSamples']) 
@@ -2146,7 +2148,11 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$extras = ""
+				if($script:g_isPluggedIn -eq $false) {
+					$extras = "On Battery: $script:g_batteryLevel % |"
+				}
+				$statusMessage = "$extras CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Log $statusMessage "INFO"
 			} elseif ($script:Config['LogToConsoleVerbose']) {
 				$mouseLog = " "
@@ -2156,7 +2162,11 @@ try {
 				} else {
 					$mouseLog = "(mouse check skipped)"
 				}
-				$statusMessage = "CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
+				$extras = ""
+				if($script:g_isPluggedIn -eq $false) {
+					$extras = "On Battery: $script:g_batteryLevel % |"
+				}
+				$statusMessage = "$extras CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Host-Wrapper $statusMessage "INFO"
 			}
 
@@ -2185,17 +2195,15 @@ try {
 			}
 			
 			# Hibernate or sleep if applicable under a valid battery user set threshold.
-			$script:g_batteryLevel = GetBatteryLevel
-			$script:g_isPluggedIn = IsComputerPluggedIn
 			$forceHibernateTime = $script:Config['HibernateWhenBatteryIsBelowLevel']
 			if($script:g_isPluggedIn -eq $true) {
 				# NOTE: This is an important hack to rely on because laptops nowadays can have an alternative (slower) usb charger, which can cause the laptop battery to drain even if and while it's plugged in.
-				$forceHibernateTime = $script:Config['HibernateWhenBatteryIsBelowLevel'] / 2.0
+				$forceHibernateTime = [int]($script:Config['HibernateWhenBatteryIsBelowLevel'] / 2)
 			}
 			$forceSleepTime = $script:Config['SleepWhenBatteryIsBelowLevel']
 			if($script:g_isPluggedIn -eq $true) {
 				# NOTE: This is an important hack to rely on because laptops nowadays can have an alternative (slower) usb charger, which can cause the laptop battery to drain even if and while it's plugged in.
-				$forceSleepTime = $script:Config['SleepWhenBatteryIsBelowLevel'] / 2.0
+				$forceSleepTime = [int]($script:Config['SleepWhenBatteryIsBelowLevel'] / 2)
 			}
 			
 			if ($script:Config['HibernateWhenBatteryIsBelowLevel'] -gt 0 -and $script:g_batteryLevel -lt $forceHibernateTime) {
