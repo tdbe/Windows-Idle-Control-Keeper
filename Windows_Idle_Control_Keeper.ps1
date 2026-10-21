@@ -1941,6 +1941,13 @@ try {
 			Update-GpuTypes
 			
 			$script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
+			
+			# we re-enable this optinonal os sleep block because someone else might have used it and removed it (the calls don't stack)
+			if ( # $script:g_PreventSleep_ES -eq $false -and 
+					$script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
+				$script:g_PreventSleep_ES = $true
+				[WindowsSleepWrangler]::IgnoreIdleTimers()
+			}
 		}
 		
 		if ($script:Config['PauseScript'] -eq $true) {
@@ -1954,7 +1961,8 @@ try {
 				[WindowsSleepWrangler]::StopIgnoringIdleTimers()
 			}
 			$skipThisFrame = $true
-		} elseif ($script:g_PreventSleep_ES -eq $false -and $script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
+		} elseif ( # $script:g_PreventSleep_ES -eq $false -and # we re-enable this optinonal os sleep block because someone else might have used it and removed it (the calls don't stack)
+					$script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
 			$script:g_PreventSleep_ES = $true
 			[WindowsSleepWrangler]::IgnoreIdleTimers()
 		}
