@@ -2,7 +2,7 @@
 
 # Intro:
 
-[Saul Goodman voice] **Can't get reliable sleep? Feeling like it's out of your control? Scared of defenestration? Well fret not, just run this script and start counting those sheep!**
+[Saul Goodman voice] **Can't get reliable sleep and or stay awake? Feeling like it's out of your control? Scared of defenestration? Well fret not, just run this script and start counting those sheep!**
 
 **WICK - Windows Idle Control Keeper**
 
