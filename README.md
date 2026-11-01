@@ -15,8 +15,8 @@ I don't usually post my system scripts but it annoyed me that for such a wide ne
 ## Features:
 
 - Does not require administrator permission.
-- Works even if windows is locked. It maintains Windows' screen locking triggers (also can lock on demand), and display off and screensaver schedule (can also be triggered on demand).
-- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it can monitor your actual power plan (more info in the description of the `MutualExclusionFlagFile` parameter). (And if for some reason you Log Off but keep the computer on, you need to manually queue a new system task.)
+- Works even if windows is locked, maintains Windows' screen locking triggers (also can lock on demand), and display off and screensaver schedule (can also be triggered on demand).
+- Works even if windows is never logged on. As a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it can monitor your actual power plan (more info in the description of the `MutualExclusionFlagFile` parameter). (And if for some reason you Log Off but keep the computer on, you need to manually queue a new system task.)
 - Also provides its own options to sleep or hibernate when below specific battery levels (if there is a battery): `SleepWhenBatteryIsBelowLevel`, `HibernateWhenBatteryIsBelowLevel`.
 - Shows warning / abort window for `AbortWindowCountdownSeconds` (and `CriticalBatteryAbortWindowCountdownSeconds`) before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 - Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (you can also ignore them and use manual times settings).
