@@ -71,7 +71,11 @@ were sleeping or somehow lagging a lot, Resetting idle counter.
 
 ### Note: 
 
-Tested on Windows 11 LTSC, laptop and PC.
+Tested on Windows 11 LTSC, laptops and PCs.
+
+### Note:
+
+I've always nuked Modern Standby (S0 Low Power Idle) from every PC I touched, because the PC industry has literally 0.0f low-power-state hardware and protocol standards, and I don't want constant 100W power draw, and my battery to run out in 2 hours while "modern sleeping" with the laptop lid closed (Microsoft is the most infuriating thing in the history of tech). I only sample the classic power plan times (if the setting is enabled); you can ctrl+f how I printed and fetched the sleep AC/DC settings, and contribute with parsing of anything else if you want. Hardware tests & PRs welcome.
 
 ### Note:
 
@@ -85,13 +89,9 @@ I built-in a 60 second failsafe, before which this script won't do anything. So 
 
 Because it doesn't use admin rights, while `PreventAndReplaceWindowsAutoSleep` is `$true`, this script can't check if other processes requested that the system not sleep, e.g. an active remote desktop connection while the PC is otherwise within your idle thresholds; so it won't respect their request. You could fix this by either setting `PreventAndReplaceWindowsAutoSleep` to `$false`, or try running this script as admin and uncomment the `ctrl+f:[respectOtherApps]` code blocks.
 
-### Note:
-
-I've always nuked Modern Standby from every PC I touched, because the PC industry has literally 0.0f low-power-state hardware and protocol standards, and I don't want constant 100W power draw, and my battery to run out in 2 hours while "modern sleeping" with the laptop lid closed (Microsoft is the most infuriating thing in the history of tech). You can have a look at how I printed and fetched the sleep AC/DC settings, and contribute with parsing of anything else if you want. Hardware tests & PRs welcome.
-
 ### Note: 
 
-I wouldn't be caught dead writing for free 2000 lines of powershell script of all things, so for this project I tried out LLMs. I don't consider llm output even remotely reliable, but this is all verified and very re-written by me. For those curious: I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4, locally. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and mostly the .PARAM & settings handling. Also the peak audio checking I had to research and write myself in python after many wildly off LLM solutions.
+This project has been reliable in daily use, for a long time. But, I wouldn't have been caught dead casually writing 2000 lines of powershell script of all things, so I tried out LLMs. I don't consider llm output even remotely trustworthy, but at this point it's all verified and very re-written by me. For those curious: I used 256k context and: qwen 3 coder next 80b a3b q6, qwen 3.6 35b a3b q8, and qwen 3.6 27b q4, locally. They're "great" (within 5-10% of the scores of the huge frontier models) but simultaneously also completely shit at even such a simple job, and not just because this solution doesn't already exist: ie they picked network and storage checks that take at least 1s to return a value, and were calling them repeatedly in loops per disk and per adapter, resulting in a while loop that runs once every 7-10s.. So the verdict is I had to do all the thinking myself. They only oneshotted the logging, the cpu, the sleep functions, and mostly the .PARAM & settings handling. Also the peak audio checking I had to research and write myself in python after many wildly off LLM solutions.
 
 ## Run & Parameters:
 
