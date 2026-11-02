@@ -2023,19 +2023,16 @@ try {
 			
 			# Check for sustained activity (reset idle timer)
 			$hasSustainedActivity = $false
+			$idleBreakerMessage = " "
 			
 			# CPU: >= $script:Config['ActiveSamplesWithinInterval'] of last $script:g_maxSamples were above threshold
 			if ($script:g_cpuHistory.Count -ge $script:g_maxSamples) {
 				$activeCount = ($script:g_cpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
-						Write-Log "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " ~~~~~~~~~~~*--------- " "Info"
+						$idleBreakerMessage = "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] CPU: $activeCount/$script:g_maxSamples samples > $($script:Config['CpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2046,13 +2043,9 @@ try {
 				$activeCount = ($script:g_gpuHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
-						Write-Log "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] GPU: $activeCount/$script:g_maxSamples samples > $($script:Config['GpuThresholdPercent'])% (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2063,17 +2056,13 @@ try {
 				$activeCount = ($script:g_diskHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
-						Write-Log "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required).[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required).[idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Disk: $activeCount/$script:g_maxSamples samples > $($script:Config['DiskThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 					$hasSustainedActivity = $true
 				}
-				
 			}
 
 			# Network: >= $script:Config['ActiveSamplesWithinInterval'] of last $script:g_maxSamples were above threshold
@@ -2081,13 +2070,9 @@ try {
 				$activeCount = ($script:g_netHistory | Where-Object { $_ }).Count
 				if ($activeCount -ge $script:Config['ActiveSamplesWithinInterval']) {
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
-						Write-Log "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Network: $activeCount/$script:g_maxSamples samples > $($script:Config['NetworkThresholdKBps']) KBps (>= $($script:Config['ActiveSamplesWithinInterval']) required). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 					$hasSustainedActivity = $true
 				}
@@ -2100,13 +2085,9 @@ try {
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
 				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
-						Write-Log "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose']) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 					$hasSustainedActivity = $true
 					$audioBasedActivityThisFrame = $true
@@ -2121,15 +2102,11 @@ try {
 			if ($secondsSinceLastInputInfo -ne $null -and $secondsSinceLastInputInfo -le $idleSecOrUserSec) {
 				#if ($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamples']) {
 					if($idleSecOrUserSec -ge $script:Config['LogToFileIntervalSeconds']){
-						Write-Log " ~~~~~~~~~~*---------- " "INFO"
 						#Write-Log "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
-						Write-Log "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Log " ~~~~~~~~~~~*----------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose'] -eq $true) {
-						Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
 						#Write-Host-Wrapper "[IDLE BREAKER][idleSeconds: $([math]::Round($script:g_idleSeconds, 5))] Mouse moved $([math]::Round($mouseDelta,1)) px > $MouseThresholdPixels, Resetting idle counter." "INFO"
-						Write-Host-Wrapper "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]" "INFO"
-						Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+						$idleBreakerMessage = "[IDLE BREAKER] Mouse/touch/keyboard activity registered $secondsSinceLastInputInfo seconds ago. Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					}
 				#}
 				$hasSustainedActivity = $true
@@ -2142,7 +2119,7 @@ try {
 					$script:g_PcLockedOnDemand = $false
 				}
 			}
-			
+						
 			$script:g_batteryLevel = GetBatteryLevel
 			$script:g_isPluggedIn = IsComputerPluggedIn
 			
@@ -2176,6 +2153,19 @@ try {
 				}
 				$statusMessage = "$extras CPU: $cpu % | GPU: $gpu % | Disk: $disk KBps | Net: $net KBps | $mouseLog | Idle: $([math]::Round($script:g_idleSeconds/60,3)) min | (T Sleep: $script:g_CurrentSleepIdleTimeMinutes min | T Hibernate: $script:g_CurrentHibernateIdleTimeMinutes min | T Display: $script:g_DisplayTimeoutDurationMinutes min | T ScreenSaver: $script:g_ScreensaverTimeoutDurationMinutes min | T Demand Win Lock: $($script:Config['LockPcAtThisIdleTimeMinutes']) min). [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][idleSeconds_userOrAudioActivity: $([math]::Round($script:g_idleSeconds_userOrAudioActivity, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 				Write-Host-Wrapper $statusMessage "INFO"
+			}
+			
+			# print any idle breaker event messages accumulated from above
+			if($idleBreakerMessage.length -gt 1) { 
+				if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
+					Write-Log " ~~~~~~~~~~*---------- " "INFO"
+					Write-Log $idleBreakerMessage "INFO"
+					Write-Log " ~~~~~~~~~~~*--------- " "INFO"
+				} elseif ($script:Config['LogToConsoleVerbose']) {
+					Write-Host-Wrapper " ~~~~~~~~~~*---------- " "INFO"
+					Write-Host-Wrapper $idleBreakerMessage "INFO"
+					Write-Host-Wrapper " ~~~~~~~~~~~*--------- " "INFO"
+				}
 			}
 
 			if ($hasSustainedActivity) {
