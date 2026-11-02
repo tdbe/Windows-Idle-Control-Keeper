@@ -24,8 +24,8 @@
 	## Features:
 
 	- Does not require administrator permission.
-	- Works even if windows is locked. 
-	- Also works as a system task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to monitor your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
+	- Works also if windows is locked, maintains Windows' screen locking triggers (also can lock on demand), and display off and screensaver schedule (can also be triggered on demand).
+	- Works even if Windows is never logged in. As a System task: if you start it at system start via task scheduler + `run whether the user is logged in or not`. But then you must also add a user task on `log in` so it starts to monitor your actual power plan: read the description of the `MutualExclusionFlagFile` parameter. (And if for some reason you Log Off but keep the computer on, you need to manually start a new system task.)
 	- Shows warning / abort window for AbortWindowCountdownSeconds (and CriticalBatteryAbortWindowCountdownSeconds) before triggering a sleep or hibernate (if in an interactive session (not locked or logged out)).
 	- Also provides its own options to sleep or hibernate when below specific battery levels (if there is a battery): SleepWhenBatteryIsBelowLevel, HibernateWhenBatteryIsBelowLevel. A self-dismissing message is shown to abort if session is interactive (CriticalBatteryAbortWindowCountdownSeconds).
 	- Dynamically reads (every minute (configurable)) from your currently active windows power plan (plugged in or battery) to check sleep and hibernate times (also display and screensaver) (can also ignore them and use manual times).
@@ -35,8 +35,7 @@
 	- Can set a sleep or hibernate time for longer than 5h (the max that Windows power plan allows for some gormless reason).
 	- Allows a blacklist for logical drives e.g. `"L", "A", "N"` - you may have drives that have activity you consider passive and you're okay sleeping on. But also keep in mind the NetworkThresholdKBps setting.
 	- Can also prevent sleep or hibernate while a file or folder exists (e.g. "D:\Bak" or "D:\Bak\myLongSlowBackup.tmp"), by pasting its path in the DontSleepWhileThisFileExistsPath. If this file exists in the moment that this script would trigger a sleep or hibernate, it won't sleep/hibernate. (File checked every FileSettingsPollIntervalMinutes) (The script otherwise works as normal e.g. turn display off (if set to)) The path should be accessible by all users.
-	- Logs what's going on, to Windows' Event Viewer - Application Log (0. on start ('69' '1111'), 1. idle_on ('69' '420') (after 1m of idle), 2. idle_off ('69' '421'), 3. on exit ('69' '1000')) (the actual message is in the 'Details' tab of the event (non-admin limitation)). Also logs to file at LogPath, so you know at what time of day Idle state was broken, by what, and after how much idle time. (or if there were errors) (log cleans itself up to stay less than LogMaxSizeMB)
-	- It maintains windows screen locking (also can lock on demand), and display off and screensaver schedule (can be triggered on demand).
+	Logs what's going on to a file at LogPath, so you know at what time of day Idle state was broken, by what, after how much idle time, sporadic stats etc. (log cleans itself up to stay less than LogMaxSizeMB). Also logs to Windows' Event Viewer - Application Log (On start ('69' '1111'); On idle_on ('69' '420') (after 1m of idle), On idle_off ('69' '421'), On exit ('69' '1000')) (the actual message is in the 'Details' tab of the event (non-admin limitation)).
 
 	## Dependencies:
 
@@ -1942,7 +1941,8 @@ try {
 			
 			$script:g_nextSettingsPollSeconds = $script:Config['SettingsPollIntervalMinutes'] * 60
 			
-			# we re-enable this optinonal os sleep block because someone else might have used it and removed it (the calls don't stack)
+			# Often & constantly re-enable this optinonal OS sleep flag code block because some other program might have used it and/or removed it in the meantime (the calls don't stack)
+			# Note this will affect the (commented out) "[respectOtherApps]" code blocks
 			if ( # $script:g_PreventSleep_ES -eq $false -and 
 					$script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
 				$script:g_PreventSleep_ES = $true
@@ -1961,7 +1961,7 @@ try {
 				[WindowsSleepWrangler]::StopIgnoringIdleTimers()
 			}
 			$skipThisFrame = $true
-		} elseif ( # $script:g_PreventSleep_ES -eq $false -and # we re-enable this optinonal os sleep block because someone else might have used it and removed it (the calls don't stack)
+		} elseif (  $script:g_PreventSleep_ES -eq $false -and 
 					$script:Config['PreventAndReplaceWindowsAutoSleep'] -eq $true) {
 			$script:g_PreventSleep_ES = $true
 			[WindowsSleepWrangler]::IgnoreIdleTimers()
