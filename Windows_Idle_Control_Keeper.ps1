@@ -208,7 +208,7 @@
   Seconds window to check for sustained activity. (default: 6)
 
 .PARAMETER ActivityDetectionPeriodSamplesAudio
-  Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
+  (0 means this check is disabled) Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
   
 .PARAMETER UseOnlyInputAndAudioEventsForDisplayOff
   If set to $true, the screensaver (if available) and the monitor off, will happen based on a separate idle timer which can only be interrupted by audio playback or user input. This is nice if you want to put your computer to work, and walk away with the guarantee that the monitor won't waste power even if the pc will not sleep. (default: $false)
@@ -1481,6 +1481,7 @@ $currentPythonPath = Resolve-PythonPath -PathPattern $script:Config['PythonPath'
 # --- Sound: Detects if any audio is playing ---
 function Get-AudioIsPlaying {
     if (-not [System.Environment]::UserInteractive) { return $false }
+	if($script:Config['ActivityDetectionPeriodSamplesAudio'] -eq 0) { return $false }
 
     # Capture stdout only, force case-insensitive comparison, guarantee boolean
 	$pythonExe = $currentPythonPath #$script:Config['PythonPath']
@@ -2083,7 +2084,7 @@ try {
 
 			# Audio: all samples must be true
 			if ($script:g_audioHistory.Count -eq $script:g_maxSamplesAudio -and ($script:g_audioHistory | Where-Object { $_ }).Count -eq $script:g_maxSamplesAudio) {
-				if($script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
+				if($script:Config['ActivityDetectionPeriodSamplesAudio'] -ne 0 -and $script:g_idleSeconds -ge $script:Config['ActivityDetectionPeriodSamplesAudio']){
 					if ($script:g_idleSeconds -ge $script:Config['LogToFileIntervalSeconds']) {
 						$idleBreakerMessage = "[IDLE BREAKER] Sustained audio playing for $($script:Config['ActivityDetectionPeriodSamplesAudio']) samples, Resetting idle counter. [idleSeconds: $([math]::Round($script:g_idleSeconds, 5))][deltaTime: $([math]::Round($deltaTimeSeconds, 5))]"
 					} elseif ($script:Config['LogToConsoleVerbose']) {

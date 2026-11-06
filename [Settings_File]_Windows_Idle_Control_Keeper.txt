@@ -80,7 +80,7 @@ ActivityDetectionPeriodSamples:6
 #~*--------------------------------------------------------------------------------------------------#
 
 ActivityDetectionPeriodSamplesAudio:5 
-#~*------------ Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
+#~*------------ (0 means this check is disabled) Separate timeout for audio - counts if there was constant sound for this many samples in a row; with a custom sound peak threshold to e.g. avoid background noise (threshold in audio pythin script). (default: 5)
 #~*--------------------------------------------------------------------------------------------------#
 
 UseOnlyInputAndAudioEventsForDisplayOff:$false
